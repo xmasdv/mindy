@@ -1,0 +1,76 @@
+name: Feature request
+description: Propose an outcome grounded in a clear user problem
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Mindy is an early, pre-implementation project. Start with the user problem, not an implementation. Proposals are welcome; acceptance does not guarantee implementation.
+  - type: textarea
+    id: problem
+    attributes:
+      label: User problem or job
+      description: What is the user trying to accomplish, and what prevents it today?
+    validations:
+      required: true
+  - type: input
+    id: target-user
+    attributes:
+      label: Target user
+      description: Identify who has this problem and in what context.
+    validations:
+      required: true
+  - type: textarea
+    id: workaround
+    attributes:
+      label: Current workaround
+      description: How is the problem handled today, and what does that cost?
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Proposed outcome
+      description: Describe the observable result without prescribing a large implementation.
+    validations:
+      required: true
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Scope impact
+      options:
+        - Core mail workflow
+        - Multi-account or account-tree workflow
+        - Calendar or contacts
+        - Migration or import discovery
+        - Local draft-only AI
+        - Accessibility
+        - Documentation or governance
+        - Build or upstream integration
+        - Deferred or non-goal area
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: Share research, examples, frequency, or impact. Do not include sensitive mailbox or personal data.
+  - type: textarea
+    id: mvp
+    attributes:
+      label: MVP fit
+      description: Explain how this supports the focused desktop mail MVP or why it should wait.
+    validations:
+      required: true
+  - type: checkboxes
+    id: acknowledgement
+    attributes:
+      label: Scope acknowledgement
+      options:
+        - label: I understand Mindy actively resists feature bloat and that non-goals may be declined or deferred.
+          required: true
+        - label: I understand that discussion or acceptance does not guarantee implementation.
+          required: true

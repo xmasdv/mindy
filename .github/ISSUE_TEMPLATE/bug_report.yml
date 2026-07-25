@@ -1,0 +1,71 @@
+name: Bug report
+description: Report reproducible incorrect behavior in a current or planned Mindy area
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Mindy is pre-implementation: there is no runnable client, build, package, or download yet. Use this form for reproducible problems in current project artifacts or clearly identified future behavior.
+
+        **Do not report security vulnerabilities publicly.** Use the repository's [private security advisory reporting page](https://github.com/xmasdv/mindy/security/advisories/new) as the primary channel. If GitHub private vulnerability reporting is unavailable or inaccessible, email [christian@becominds.com](mailto:christian@becominds.com) privately.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Affected area
+      options:
+        - Documentation or governance
+        - Product or interaction design
+        - Upstream scaffold or build (planned)
+        - Mail or multi-account workflow (planned)
+        - Calendar or contacts (planned/inherited)
+        - Local draft-only AI (planned/optional)
+        - Security model (non-sensitive discussion only)
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Reproducible behavior
+      description: State the exact sequence and what happened. For documentation, include the page and section.
+      placeholder: |
+        1. Open...
+        2. Select...
+        3. Observe...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: Explain the expected result and why it follows from current project scope or documentation.
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment, if applicable
+      description: Include OS, version, build/revision, account type, and other relevant setup only when a runnable artifact exists.
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence and redacted logs
+      description: Add links, screenshots, or logs. Remove message content, addresses, credentials, tokens, profile data, and other sensitive information.
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Sensitive-data check
+      options:
+        - label: I confirm this report contains no credentials, tokens, private mailbox data, personal addresses, or other sensitive information.
+          required: true
+        - label: I have redacted logs, screenshots, and attachments before submitting them.
+          required: true
+  - type: checkboxes
+    id: security
+    attributes:
+      label: Security check
+      options:
+        - label: This is not a security vulnerability requiring private disclosure.
+          required: true

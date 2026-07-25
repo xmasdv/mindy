@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security vulnerability privately
+    url: https://github.com/xmasdv/mindy/security/advisories/new
+    about: Use GitHub's private vulnerability reporting form as the primary channel; never disclose suspected vulnerabilities publicly.
+  - name: Email the private security contact
+    url: mailto:christian@becominds.com
+    about: Use this private fallback if GitHub private vulnerability reporting is unavailable or inaccessible; never disclose suspected vulnerabilities publicly.
