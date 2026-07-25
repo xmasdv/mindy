@@ -1,0 +1,61 @@
+# Local project tooling
+.atl/
+.playwright-mcp/
+
+# Noncanonical market research inputs and raw deliverables
+/Mindy Market Demand Investigation.docx
+/mindy_evidence_dataset.csv
+/mindy_evidence_dataset.json
+/mindy_market_demand_report_es.md
+/mindy_research_log.csv
+
+# Vendored upstream source
+/vendor/
+
+# Mozilla build and object directories
+/obj-*/
+/objdir-*/
+**/obj-*/
+**/objdir-*/
+/_build/
+/.mozbuild/
+/.mozbuild-state/
+/_virtualenvs/
+
+# Downloaded AI runtimes and models
+/ai/runtimes/
+/ai/models/
+/runtime-downloads/
+/model-downloads/
+*.gguf
+*.onnx
+*.safetensors
+
+# Secrets and local environment
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+secrets.*
+
+# Logs and generated reports
+*.log
+/logs/
+/coverage/
+/test-results/
+
+# Editors, operating systems, and caches
+.DS_Store
+Thumbs.db
+Desktop.ini
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+.cache/
+__pycache__/
+*.py[cod]
