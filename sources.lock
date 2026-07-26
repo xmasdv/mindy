@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "release": "Thunderbird 140.13.0esr",
+  "verified_at": "2026-07-25",
+  "gecko": {
+    "repository": "https://hg.mozilla.org/releases/mozilla-esr140",
+    "revision": "611eeda342a90baf6918fe754fcf168087b3767e"
+  },
+  "comm": {
+    "repository": "https://hg.mozilla.org/releases/comm-esr140",
+    "revision": "faf78db7dfb184002adc6b859c8ad395ff216239",
+    "release_tag": "THUNDERBIRD_140_13_0esr_RELEASE"
+  },
+  "compatibility": {"gecko_revision": "611eeda342a90baf6918fe754fcf168087b3767e"},
+  "layout": {"gecko": "vendor/gecko", "comm": "vendor/gecko/comm"}
+}
