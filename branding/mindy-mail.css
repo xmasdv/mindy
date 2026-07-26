@@ -1,0 +1,19 @@
+:root[data-mindy-shell="true"] {
+  --mindy-accent: #6750a4;
+  --mindy-surface: #f7f5fa;
+}
+
+:root[data-mindy-shell="true"] #folderPane {
+  background: var(--mindy-surface);
+}
+
+:root[data-mindy-shell="true"] :focus-visible {
+  outline: 2px solid var(--mindy-accent);
+  outline-offset: 2px;
+}
+
+@media (max-width: 720px) {
+  :root[data-mindy-shell="true"] {
+    --folderPaneSplitter-width: min(18em, 35vw);
+  }
+}
