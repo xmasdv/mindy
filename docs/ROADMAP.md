@@ -143,4 +143,4 @@ There are no delivery dates or platform commitments beyond this gated sequence.
 
 ## Related documents
 
-[Overview](../README.md) | [Product](PRODUCT.md) | [Architecture](ARCHITECTURE.md) | [Security](SECURITY.md) | [Contributing](../CONTRIBUTING.md)
+[Overview](../README.md) | [Product](PRODUCT.md) | [Design](../DESIGN.md) | [Architecture](ARCHITECTURE.md) | [Security](SECURITY.md) | [Contributing](../CONTRIBUTING.md)
