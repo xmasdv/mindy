@@ -8,9 +8,9 @@ Mindy gives multi-account independent professionals a focused desktop email work
 
 ## Project state
 
-Mindy is a greenfield, pre-implementation project. There is no product source checkout, runnable build, package, or supported installation yet. The initial pilot target is Windows 11 x64.
+Mindy is an early implementation project. A pinned upstream checkout, reproducible Windows build, and first downstream mail-shell seam exist; there is no supported installation yet. The initial pilot target is Windows 11 x64.
 
-Visual design is intentionally not yet defined. No visual system, brand assets, or product-specific accessibility or inclusion requirements have been established; future work must not infer them from this baseline product record.
+The approved **Precision Workspace** direction defines Mindy's primary inbox composition, visual tokens, responsive topology, and accessibility constraints. `DESIGN.md` is the durable system contract; the final logo asset remains provisional.
 
 ## Problem
 
@@ -138,4 +138,4 @@ These are pilot decision gates, not scientific market facts. Numeric thresholds 
 
 ## Related documents
 
-[Overview](../README.md) | [Architecture](ARCHITECTURE.md) | [Security](SECURITY.md) | [Roadmap](ROADMAP.md) | [Contributing](../CONTRIBUTING.md)
+[Overview](../README.md) | [Design](../DESIGN.md) | [Architecture](ARCHITECTURE.md) | [Security](SECURITY.md) | [Roadmap](ROADMAP.md) | [Contributing](../CONTRIBUTING.md)

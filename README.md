@@ -1,8 +1,8 @@
 # Mindy
 
-Mindy is an early, pre-implementation open-source desktop email client project for multi-account independent professionals and reachable former Postbox users. It aims to make daily email simple, beautiful, fast, and reliable without accumulating feature bloat.
+Mindy is an early open-source desktop email client project for multi-account independent professionals and reachable former Postbox users. It aims to make daily email simple, beautiful, fast, and reliable without accumulating feature bloat.
 
-> **Status: pre-implementation.** Product proposal and specification work exists in Engram, and the technical design is nearly complete, but the final design phase gate has not passed. There is no product source checkout, runnable build, package, or supported installation yet.
+> **Status: early implementation.** The pinned Thunderbird downstream builds on Windows 11 x64, the first mail-shell seam is integrated, and the Precision Workspace visual direction is approved. There is no supported installation yet.
 
 Mindy is intended as a small downstream of Thunderbird ESR and Gecko. It is not Thunderbird, Mozilla, Postbox, eM Client, or Outlook, and it is not affiliated with their owners. Those names and trademarks belong to their respective owners.
 
@@ -52,6 +52,7 @@ Inherited does not mean gap-free. Notable caveats include incomplete Microsoft E
 | Document | Purpose |
 |---|---|
 | [Product](docs/PRODUCT.md) | Users, jobs, scope, interaction boundaries, and validation gates. |
+| [Design](DESIGN.md) | Precision Workspace tokens, component language, responsive rules, and visual guardrails. |
 | [Architecture](docs/ARCHITECTURE.md) | Intended downstream architecture, trust boundaries, and design status. |
 | [Security](docs/SECURITY.md) | Threat model, invariants, telemetry exclusions, and disclosure guidance. |
 | [Roadmap](docs/ROADMAP.md) | Phase order, exit criteria, and deferred work. |

@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-07-27T01:45:00+02:00",
+  "title": "Design System: Mindy Precision Workspace",
+  "extensions": {
+    "colorMeta": {
+      "accent": { "role": "primary", "displayName": "Mindy Violet", "canonical": "#6750A4" },
+      "rail": { "role": "neutral", "displayName": "Deep Aubergine", "canonical": "#29213D" },
+      "surface-muted": { "role": "neutral", "displayName": "Soft Workspace", "canonical": "#F7F5FA" },
+      "text": { "role": "neutral", "displayName": "Graphite", "canonical": "#24212A" }
+    },
+    "typographyMeta": {
+      "headline": { "displayName": "Workspace Headline", "purpose": "Message and major view titles." },
+      "body": { "displayName": "Operational Body", "purpose": "Dense lists, message content, and controls." },
+      "label": { "displayName": "Metadata Label", "purpose": "Counts, times, scopes, and compact status." }
+    },
+    "shadows": [
+      { "name": "overlay", "value": "0 8px 24px rgba(36, 33, 42, 0.16)", "purpose": "Menus, transient account pane, and modal surfaces only." }
+    ],
+    "motion": [
+      { "name": "state", "value": "120ms cubic-bezier(0.2, 0, 0, 1)", "purpose": "Hover, selection, and focus transitions." },
+      { "name": "pane", "value": "180ms cubic-bezier(0.2, 0, 0, 1)", "purpose": "Reversible pane transitions; disabled for reduced motion." }
+    ],
+    "breakpoints": [
+      { "name": "narrow", "value": "960px" },
+      { "name": "wide", "value": "1280px" }
+    ]
+  },
+  "components": [
+    { "name": "Primary Action", "kind": "button", "refersTo": "button-primary", "description": "The single emphasized action in a local context.", "html": "<button class=\"ds-primary\">New message</button>", "css": ".ds-primary{height:36px;padding:10px 16px;border:0;border-radius:8px;background:#6750A4;color:#fff;font:600 14px 'Segoe UI Variable Text','Segoe UI',sans-serif}.ds-primary:hover{background:#57428F}.ds-primary:focus-visible{outline:2px solid #8069C3;outline-offset:2px}" },
+    { "name": "Global Search", "kind": "input", "refersTo": "search-field", "description": "Persistent mail search with visible scope and shortcut.", "html": "<input class=\"ds-search\" aria-label=\"Search mail\" placeholder=\"Search mail\">", "css": ".ds-search{height:40px;padding:8px 14px;border:1px solid #E4E0E8;border-radius:12px;background:#fff;color:#24212A;font:400 14px 'Segoe UI Variable Text','Segoe UI',sans-serif}.ds-search:hover{border-color:#B9B2C2}.ds-search:focus-visible{border-color:#6750A4;outline:2px solid #8069C3;outline-offset:1px}" },
+    { "name": "Selected Message", "kind": "custom", "refersTo": "message-row-selected", "description": "Stable dense row selection without card elevation.", "html": "<div class=\"ds-message\" role=\"option\" aria-selected=\"true\"><strong>Clara Bennett</strong><span>Q2 Campaign Brief</span></div>", "css": ".ds-message{display:grid;gap:4px;padding:12px;border-left:3px solid #6750A4;border-radius:4px;background:#F0ECF8;color:#24212A;font:400 14px 'Segoe UI Variable Text','Segoe UI',sans-serif}.ds-message:focus-visible{outline:2px solid #8069C3;outline-offset:-2px}" }
+  ],
+  "narrative": {
+    "northStar": "Precision Workspace",
+    "overview": "A dense, calm, keyboard-first desktop mail surface. Mindy owns the visual shell while mature mail services remain inherited.",
+    "keyCharacteristics": ["Equal unified and full account-tree access", "Persistent identity context", "Tonal pane hierarchy", "Subordinate local assistance"],
+    "rules": [
+      { "name": "The One Accent Rule", "body": "Violet identifies action or state and occupies less than ten percent of a normal mail screen.", "section": "colors" },
+      { "name": "Flat by Default", "body": "Pane hierarchy uses tone and dividers; shadows belong only to transient overlays.", "section": "elevation" }
+    ],
+    "dos": ["Keep account and sender identity visible at decision points.", "Preserve geometry while asynchronous state changes."],
+    "donts": ["Expose Thunderbird visual chrome on primary surfaces.", "Make assistance louder than compose or reply."]
+  }
+}
