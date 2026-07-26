@@ -1,0 +1,128 @@
+diff --git a/comm/mail/base/content/about3Pane.xhtml b/comm/mail/base/content/about3Pane.xhtml
+index 49dbb285de..c3f730933d 100644
+--- a/comm/mail/base/content/about3Pane.xhtml
++++ b/comm/mail/base/content/about3Pane.xhtml
+@@ -13,7 +13,8 @@
+ ]>
+ <html xmlns="http://www.w3.org/1999/xhtml"
+       xmlns:xul="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
+-      lightweightthemes="true">
++      lightweightthemes="true"
++      data-mindy-shell="true">
+ <head>
+   <meta charset="utf-8" />
+   <title id="about3PaneTitle"></title>
+@@ -31,6 +32,7 @@
+   <link rel="stylesheet" href="chrome://messenger/skin/shared/tree-listbox.css" />
+   <link rel="stylesheet" href="chrome://messenger/skin/searchBox.css" />
+   <link rel="stylesheet" href="chrome://messenger/skin/about3Pane.css" />
++  <link rel="stylesheet" href="chrome://messenger/skin/mindyMail.css" />
+ 
+   <link rel="localization" href="messenger/about3Pane.ftl" />
+   <link rel="localization" href="messenger/treeView.ftl" />
+diff --git a/comm/mail/test/browser/folder-display/browser.toml b/comm/mail/test/browser/folder-display/browser.toml
+index b335e05b97..34643093ae 100644
+--- a/comm/mail/test/browser/folder-display/browser.toml
++++ b/comm/mail/test/browser/folder-display/browser.toml
+@@ -62,5 +62,7 @@
+ ["browser_displayName.js"]
+ 
+ ["browser_folderPaneVisibility.js"]
++
++["browser_mindyMailShell.js"]
+ 
+ ["browser_folderToolbar.js"]
+diff --git a/comm/mail/test/browser/folder-display/browser_mindyMailShell.js b/comm/mail/test/browser/folder-display/browser_mindyMailShell.js
+new file mode 100644
+index 0000000000..e9f0632443
+--- /dev/null
++++ b/comm/mail/test/browser/folder-display/browser_mindyMailShell.js
+@@ -0,0 +1,51 @@
++/* This Source Code Form is subject to the terms of the Mozilla Public
++ * License, v. 2.0. If a copy of the MPL was not distributed with this
++ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
++
++"use strict";
++
++var { get_about_3pane } = ChromeUtils.importESModule(
++  "resource://testing-common/mail/FolderDisplayHelpers.sys.mjs"
++);
++
++add_task(function test_mindy_shell_is_loaded_without_hiding_upstream_panes() {
++  const about3Pane = get_about_3pane();
++  const { document } = about3Pane;
++  const root = document.documentElement;
++
++  Assert.equal(
++    root.getAttribute("data-mindy-shell"),
++    "true",
++    "The Mindy shell flag should be enabled"
++  );
++  const mindyStyle = document.querySelector(
++    'link[href="chrome://messenger/skin/mindyMail.css"]'
++  );
++  Assert.ok(mindyStyle, "The Mindy shell stylesheet should be linked");
++  Assert.equal(
++    about3Pane.getComputedStyle(root).getPropertyValue("--mindy-accent").trim(),
++    "#6750a4",
++    "The Mindy accent token should be loaded"
++  );
++
++  const panes = [
++    document.getElementById("folderPane"),
++    document.getElementById("threadPane"),
++    document.getElementById("messagePane"),
++  ];
++  for (const pane of panes) {
++    Assert.ok(pane, `${pane.id} should remain present`);
++  }
++  const mindyRules = Array.from(mindyStyle.sheet.cssRules, rule => rule.cssText)
++    .join("\n");
++  Assert.ok(
++    !mindyRules.includes("display: none"),
++    "The Mindy stylesheet should not hide inherited panes"
++  );
++  Assert.stringContains(
++    about3Pane.getComputedStyle(document.getElementById("paneLayout"))
++      .gridTemplateAreas,
++    "folders",
++    "The inherited named grid should remain active"
++  );
++});
+diff --git a/comm/mail/themes/shared/jar.inc.mn b/comm/mail/themes/shared/jar.inc.mn
+index b82734ea97..a6d8487dd7 100644
+--- a/comm/mail/themes/shared/jar.inc.mn
++++ b/comm/mail/themes/shared/jar.inc.mn
+@@ -110,6 +110,7 @@
+   skin/classic/messenger/abContactsPanel.css                  (../shared/mail/abContactsPanel.css)
+   skin/classic/messenger/abFormFields.css                     (../shared/mail/abFormFields.css)
+   skin/classic/messenger/about3Pane.css                       (../shared/mail/about3Pane.css)
++  skin/classic/messenger/mindyMail.css                        (../shared/mail/mindyMail.css)
+   skin/classic/messenger/aboutAddonsExtra.css                 (../shared/mail/aboutAddonsExtra.css)
+   skin/classic/messenger/aboutAddressBook.css                 (../shared/mail/aboutAddressBook.css)
+   skin/classic/messenger/aboutImport.css                      (../shared/mail/aboutImport.css)
+diff --git a/comm/mail/themes/shared/mail/mindyMail.css b/comm/mail/themes/shared/mail/mindyMail.css
+new file mode 100644
+index 0000000000..0fbf9317ef
+--- /dev/null
++++ b/comm/mail/themes/shared/mail/mindyMail.css
+@@ -0,0 +1,19 @@
++:root[data-mindy-shell="true"] {
++  --mindy-accent: #6750a4;
++  --mindy-surface: #f7f5fa;
++}
++
++:root[data-mindy-shell="true"] #folderPane {
++  background: var(--mindy-surface);
++}
++
++:root[data-mindy-shell="true"] :focus-visible {
++  outline: 2px solid var(--mindy-accent);
++  outline-offset: 2px;
++}
++
++@media (max-width: 720px) {
++  :root[data-mindy-shell="true"] {
++    --folderPaneSplitter-width: min(18em, 35vw);
++  }
++}

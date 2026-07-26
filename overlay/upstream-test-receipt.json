@@ -1,0 +1,42 @@
+{
+  "runtimeStatus": "pass",
+  "command": "mach test <mapped tests> after an incremental comm/mail build",
+  "mindyRuntime": {
+    "command": "./mach test comm/mail/test/browser/folder-display/browser_mindyMailShell.js",
+    "checks": 10,
+    "expected": 10,
+    "unexpected": 0,
+    "result": "OK",
+    "build": "PASS 2m33s"
+  },
+  "existingRuntime": {
+    "patchBuild": "PASS 5:25.99",
+    "browserSubtests": 421,
+    "offlineSubtests": 4
+  },
+  "cases": {
+    "unifiedAccountScoping": [
+      "mail/test/browser/folder-tree-modes/browser_smartFolders.js",
+      "mail/test/browser/folder-pane/browser_folderPaneModeContextMenu.js"
+    ],
+    "selectedIdentity": ["mail/test/browser/composition/browser_newmsgComposeIdentity.js"],
+    "searchEmpty": ["mail/test/browser/global-search-bar/browser_globalSearchBar.js"],
+    "archiveMove": ["mail/test/browser/folder-display/browser_messageCommandsArchive.js"],
+    "loadingError": [
+      "mail/test/browser/quick-filter-bar/browser_filterLogic.js",
+      "mail/test/browser/account/browser_accountHubManualConfig.js"
+    ],
+    "keyboardNarrowPanes": ["mail/test/browser/folder-display/browser_folderPaneVisibility.js"],
+    "setupFailure": ["mail/test/browser/account/browser_accountHubManualConfig.js"],
+    "offlineIsolation": [
+      "mailnews/imap/test/unit/test_offlinePlayback.js",
+      "mailnews/imap/test/unit/test_imapStoreMsgOffline.js"
+    ],
+    "calendarContacts": [
+      "calendar/test/browser/browser_basicFunctionality.js",
+      "calendar/test/browser/browser_tabs.js",
+      "mail/components/addrbook/test/browser/browser_open_actions.js",
+      "mail/components/addrbook/test/browser/browser_contact_sidebar_keyboard.js"
+    ]
+  }
+}

@@ -1,2 +1,3 @@
 # One patch path per line, relative to this directory.
 # Patch paths are rooted at vendor/gecko; use comm/ for Thunderbird files.
+0002-mindy-mail-shell.patch
