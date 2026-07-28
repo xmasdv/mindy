@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "classification": "rejected_historical_evidence",
+  "baseline_status": "rejected",
+  "reason": "Retained runtime captures show historical behavior and rejected partial styling; they are comparison evidence, not visual authority or goldens.",
+  "source_revisions": {"gecko": "611eeda342a90baf6918fe754fcf168087b3767e", "comm": "faf78db7dfb184002adc6b859c8ad395ff216239"},
+  "patch_series_sha256": null,
+  "artifact_sha256": null,
+  "fixture": "historical account-free profile; full fixture provenance unavailable",
+  "environment": {"os": "Windows", "capture_details": "incomplete historical provenance"},
+  "capture_actor": "retained-historical-runtime-capture",
+  "review_actor": null,
+  "known_unknowns": ["build artifact identity", "patch-series identity", "display scale", "app zoom", "locale and direction"],
+  "records": [
+    {"name": "initial-first-run", "state": "first-run", "path": "evidence/visual/rejected-historical/rejected-01-initial-first-run.png", "sha256": "7b3fa69996ad4783ee7f125689356883c11a1f643c8d39c061c7c3aba577c881"},
+    {"name": "account-not-configured", "state": "account-free-confirmation", "path": "evidence/visual/rejected-historical/rejected-02-account-not-configured-confirmation.png", "sha256": "d3a3b05df2c51db3e728e78e0d7d40a783a1f5114b07d406ae59fce32c22940c"},
+    {"name": "account-not-configured-print", "state": "account-free-print-boundary", "path": "evidence/visual/rejected-historical/rejected-02b-account-not-configured-printwindow.png", "sha256": "b6f5fd982ded2a95b49ded7e7271389b744ae54b1c250ecabe3e45b545ee3ea6"},
+    {"name": "thunderbird-privacy-residue", "state": "privacy-provider-residue", "path": "evidence/visual/rejected-historical/rejected-03-thunderbird-privacy-notice.png", "sha256": "3fb4dbcc5f0586e0ec8d16ea0859315f369b69e72fb14afa837529cd3323f76e"},
+    {"name": "account-free-shell", "state": "account-free-shell", "path": "evidence/visual/rejected-historical/rejected-04-outer-shell-account-central.png", "sha256": "2d18844aa7160e62708237f920e3c4a177a47cabfda431b202acd040e6b3e852"},
+    {"name": "about-mindy", "state": "about", "path": "evidence/visual/rejected-historical/rejected-05-about-mindy.png", "sha256": "3ddce5e35381c666238e53634bdd215ef2dcf75988b5affdce98d1a7dea2ee07"},
+    {"name": "narrow-main-focus", "state": "narrow-keyboard-focus", "path": "evidence/visual/rejected-historical/rejected-06-narrow-main-focus.png", "sha256": "8255271e6a3285348a8e7df9676768ecc3239b74186dcd65c5199e8418104bd6"},
+    {"name": "restored-wide-main", "state": "restored-wide", "path": "evidence/visual/rejected-historical/rejected-07-restored-wide-main.png", "sha256": "0218bde9a2d3dad4c1a317fda220a42b55d414c433f015ee6fe7fc014f65d1ca"}
+  ]
+}

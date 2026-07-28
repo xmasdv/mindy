@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "contract_id": "replace-with-versioned-contract-id",
+  "surface_ids": [],
+  "upstream": {"source": "thunderbird", "capability": "replace-me", "contract_version": 1},
+  "inputs": [],
+  "normalized_state": {
+    "loading": "document shape and transition",
+    "ready": "document shape and transition",
+    "empty": "document shape and transition",
+    "error": "document recoverability and safe detail",
+    "unavailable": "document missing capability behavior"
+  },
+  "commands": [],
+  "events": [],
+  "capabilities": [],
+  "security_invariants": ["preserve upstream authorization and command enablement"],
+  "accessibility_invariants": ["preserve names, roles, states, focus order, and announcements"],
+  "failure_mode": "fail visibly when the declared upstream capability disappears",
+  "fixtures": {"kind": "deterministic-synthetic", "real_credentials": false, "real_personal_data": false},
+  "owner": "unassigned",
+  "reviewer": "independent-review-required"
+}

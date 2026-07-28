@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mindy.invalid/contracts/visual/screenshot-manifest.schema.json",
+  "title": "Mindy visual evidence manifest",
+  "type": "object",
+  "required": ["schema_version", "classification", "baseline_status", "source_revisions", "fixture", "environment", "capture_actor", "review_actor", "records"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "classification": {"enum": ["candidate_runtime_evidence", "accepted_baseline", "rejected_historical_evidence"]},
+    "baseline_status": {"enum": ["not-candidate", "pending-independent-approval", "accepted", "rejected"]},
+    "source_revisions": {"type": "object"}, "patch_series_sha256": {"type": ["string", "null"]},
+    "artifact_sha256": {"type": ["string", "null"]}, "fixture": {"type": "string"},
+    "environment": {"type": "object"}, "capture_actor": {"type": "string"},
+    "review_actor": {"type": ["string", "null"]}, "known_unknowns": {"type": "array"},
+    "records": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "path", "sha256", "state"],
+        "properties": {
+          "name": {"type": "string"}, "path": {"type": "string"},
+          "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}, "state": {"type": "string"},
+          "surface_ids": {"type": "array", "items": {"type": "string"}, "uniqueItems": true}
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "allOf": [
+    {"if": {"properties": {"classification": {"const": "candidate_runtime_evidence"}}}, "then": {"properties": {"baseline_status": {"const": "pending-independent-approval"}}}},
+    {"if": {"properties": {"classification": {"const": "accepted_baseline"}}}, "then": {"properties": {"baseline_status": {"const": "accepted"}, "review_actor": {"type": "string", "minLength": 1}}}},
+    {"if": {"properties": {"classification": {"const": "rejected_historical_evidence"}}}, "then": {"properties": {"baseline_status": {"const": "rejected"}}}}
+  ],
+  "additionalProperties": false
+}

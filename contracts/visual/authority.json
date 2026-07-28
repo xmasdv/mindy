@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "phase": 0,
+  "visual_authority": [
+    {"path": "DESIGN.md", "sha256": "676d370b88cd75dd32a6e6bf77a79c2761e80fdcaf9e35df41186ee709451643"},
+    {"path": "docs/VISUAL-AUDIT.md", "sha256": "b92ab9bea67eee9f92333a07fa08bc980c9f42f8dfa65818040daf3c5f99797c"},
+    {"path": "docs/VISUAL-OWNERSHIP.md", "sha256": "da9199a005df2d980ed48c16fd21b90b532080809bd05d4235150aee4a9db2f1"},
+    {"path": "docs/VISUAL-RECONSTRUCTION-PLAN.md", "sha256": "dea08e0899b118ed29a36b60fc0dfb6da9b289fedca2ca374eba1e0609f42b1b"},
+    {"path": "assets/design-concepts/mindy-inbox-mockup-v2-navy-teal.png", "sha256": "8d1ee3ddde70e44a6b7e88452f8f59af602039feceb55f95efad07b9aa89cb52"},
+    {"path": "assets/brand-production/mindy-mark.svg", "sha256": "2ce3df5793008a74ff2cb2987afe1cfe1e2f2770aa409b542472b3d72a2c5496"}
+  ],
+  "behavior_authority": {
+    "path": "sources.lock",
+    "sha256": "7a991c353c642bf7ceb2a0d666721000bbe53fcf413b352fee8ef1d06d105de0",
+    "gecko_revision": "611eeda342a90baf6918fe754fcf168087b3767e",
+    "comm_revision": "faf78db7dfb184002adc6b859c8ad395ff216239"
+  },
+  "implementation_evidence": [
+    {"path": "patches/0002-mindy-mail-shell.patch", "sha256": "28901db5858612bf04873874eefa527ed367c6acb2a202306621e1c6f7ba31d1", "authority": false}
+  ],
+  "rejected_historical_evidence": {
+    "manifest": "contracts/visual/rejected-evidence.json",
+    "classification": "rejected_historical_evidence",
+    "approved_baseline": false
+  },
+  "external_native_unknowns": {
+    "log": "docs/VISUAL-PHASE-0-POLICY.md#provider-native-and-accessibility-unknowns",
+    "classification": "external_native_unknowns",
+    "acceptance": "pending"
+  },
+  "surface_inventory": {
+    "audit_path": "docs/VISUAL-AUDIT.md",
+    "schema_path": "contracts/visual/surface-registry.schema.json",
+    "total": 80,
+    "family_counts": {"SH": 7, "AC": 8, "MW": 10, "RD": 6, "CP": 7, "SR": 4, "CA": 7, "CT": 5, "ST": 9, "SY": 11, "SF": 3, "AX": 3}
+  }
+}
