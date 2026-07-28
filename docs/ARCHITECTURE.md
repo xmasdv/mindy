@@ -1,17 +1,17 @@
 # Mindy Architecture
 
-Mindy is planned as a branded downstream of Thunderbird ESR/Gecko, with a small isolated patch set and rapid intake of upstream security updates. This document records design intent; it does not describe an implemented system.
+Mindy is an independent downstream of Thunderbird ESR/Gecko, with immutable upstream pins, an ordered isolated patch set, and rapid intake of upstream security updates. A working Thunderbird-derived baseline exists; Mindy's distinct branding and workspace remain in progress.
 
-> **Design status:** Nearly complete, but the final phase gate has not passed. Unless marked **Decided**, every topology, component, file area, and release mechanism below is **Planned** and provisional.
+> **Implementation status:** The source/bootstrap topology and local Windows build baseline are verified. Unless marked **Established** or **Decided**, components and release mechanisms below remain **Planned**, **Deferred**, or **Unknown**.
 
 ## System context
 
 | Boundary | Responsibility | Status |
 |---|---|---|
 | Thunderbird ESR/Gecko | Mail protocols, profiles, offline behavior, search, identities, security, calendar, contacts, and other mature services. | **Decided** dependency direction. |
-| Mindy downstream | Product shell, integration seams, migration entry point, local draft assistant broker/UI, and pilot instrumentation. | **Planned** custom scope. |
+| Mindy downstream | Product identity, shell, integration seams, migration entry point, and pilot instrumentation. | **In progress** custom scope. |
 | Mail and groupware providers | Remote account, message, calendar, and contact services. | External systems; provider behavior is not controlled by Mindy. |
-| Local AI runtime/model | Optional local inference downloaded separately from the application. | **Planned** and disabled by default. |
+| Local AI runtime/model | Optional local inference downloaded separately from the application. | **Deferred**; no active implementation priority. |
 | Release services | Signed application, runtime, model, and update distribution. | **Planned**; ownership and endpoints are **Unknown**. |
 
 ## Upstream and downstream boundary
@@ -23,26 +23,31 @@ Mindy is planned as a branded downstream of Thunderbird ESR/Gecko, with a small 
 - Prioritize rapid upstream security intake.
 - Treat inherited capability as an integration and regression surface, not as custom Mindy implementation.
 
-**Planned**
+**Established**
 
 - Maintain a superproject/overlay that records immutable upstream revisions and applies ordered downstream patches.
+- Keep native source and object files outside the OneDrive repository through the `vendor/` junction.
+
+**Planned**
 - Prefer stable extension, theme, and composition seams before patching upstream internals.
 - Escalate unavoidable upstream changes as narrow patches with explicit rationale and tests.
 
-## Intended source and build topology
+## Source and build topology
 
-The intended checkout uses the Firefox/Gecko source root with Thunderbird nested at `comm/`. Both revisions are to be pinned immutably, with compatibility recorded and checked through `.gecko_rev.yml`.
+The checkout uses the Firefox/Gecko source root with Thunderbird nested at `comm/`. Both revisions are pinned immutably, with compatibility recorded and checked through `.gecko_rev.yml`.
 
 ```text
-Firefox/Gecko root                    Planned upstream checkout
-|-- comm/                             Planned Thunderbird checkout
-|-- .gecko_rev.yml                    Planned compatibility declaration/check
-`-- Mindy-owned overlay/patch areas   Planned; exact locations unknown
+Mindy repository (OneDrive)           Metadata, docs, tools, config, patches
+`-- vendor/                           Junction to C:\mozilla-source\mindy\vendor
+    `-- gecko/                        Pinned Firefox/Gecko source root
+        |-- comm/                     Pinned Thunderbird source
+        |-- .gecko_rev.yml            Compatibility declaration/check
+        `-- obj-mindy-pilot/          External native build output
 ```
 
-Mozilla build and packaging surfaces are the intended foundation. A Windows release, signing, and update path is also planned. No checkout, scripts, or verified commands exist, so this document intentionally provides no runnable build instructions.
+Mozilla build and packaging surfaces are the foundation. The bootstrap tooling, source pins, patch ordering, and one local Windows build have been verified. That executable remains Thunderbird-branded; it is not evidence of a supported release, installer, signing path, or production update service.
 
-Exact upstream pins, patch seams, application identifiers, domains, update endpoints, certificates, and signing infrastructure are **Unknown** until scaffold and ownership validation.
+Native builds must remain external and resource-bounded. Do not move source or object output into OneDrive. Application identifiers, domains, update endpoints, certificates, and signing infrastructure remain **Unknown** pending ownership validation.
 
 ## Shell architecture
 
@@ -59,7 +64,7 @@ Exact upstream pins, patch seams, application identifiers, domains, update endpo
 - Adaptation layers isolate shell components from unstable upstream implementation details.
 - Custom state remains minimal; mailbox, account, identity, calendar, and contact truth stays in inherited services.
 
-Visual treatment and component details remain downstream design work. Architecture must prevent the shell from becoming either a cosmetic Thunderbird skin or a parallel mail engine.
+Visual authority now lives in [DESIGN.md](../DESIGN.md). Architecture must prevent the shell from becoming either a cosmetic Thunderbird skin or a parallel mail engine.
 
 ## Inherited-service boundary
 
@@ -75,7 +80,7 @@ Visual treatment and component details remain downstream design work. Architectu
 
 ## Local AI data flow
 
-The local assistant is an optional drafting subsystem, not a mailbox agent.
+The local assistant is deferred. If resumed, it is an optional drafting subsystem, not a mailbox agent.
 
 ```text
 Explicit user selection
@@ -113,13 +118,13 @@ Names beyond established upstream locations are deliberately descriptive, not pr
 
 | Area | Intended contents | Status |
 |---|---|---|
-| Gecko root | Upstream Firefox/Gecko checkout. | **Planned** |
-| `comm/` | Upstream Thunderbird checkout. | **Planned** |
-| `.gecko_rev.yml` | Immutable compatibility declaration/check. | **Planned** |
-| Superproject metadata | Upstream pins and reproducibility inputs. | **Planned; path unknown** |
-| Ordered patch area | Minimal downstream patch series and rationale. | **Planned; path unknown** |
-| Mindy shell area | Navigation, visual shell, and integration adapters. | **Planned; seam and path unknown** |
-| AI broker/sandbox area | Protocol, policy enforcement, local process, and tests. | **Planned; path unknown** |
+| `vendor/gecko/` | Pinned upstream Firefox/Gecko checkout through the external junction. | **Established** |
+| `vendor/gecko/comm/` | Pinned upstream Thunderbird checkout. | **Established** |
+| `vendor/gecko/comm/.gecko_rev.yml` | Immutable compatibility declaration/check. | **Established** |
+| `sources.lock`, `config/`, `tools/` | Upstream pins, build configuration, bootstrap, and verification inputs. | **Established** |
+| `patches/` | Ordered minimal downstream patch series and rationale. | **Established** |
+| Mindy shell area | Navigation, visual shell, and integration adapters. | **In progress; final seams remain planned** |
+| AI broker/sandbox area | Protocol, policy enforcement, local process, and tests. | **Deferred; path unknown** |
 | Packaging/update area | Windows branding, packaging, signing, and update configuration. | **Planned; ownership-dependent** |
 
 ## Testing layers
@@ -134,13 +139,13 @@ Names beyond established upstream locations are deliberately descriptive, not pr
 | Packaging and update | Reproducibility evidence, signed artifact verification, clean install, upgrade, rollback prevention, and separated trust paths. |
 | Pilot validation | Consent-safe content-free events supporting the gates in [PRODUCT.md](PRODUCT.md#provisional-validation-gates). |
 
-Exact frameworks and commands are **Unknown** until the scaffold exists.
+Focused bootstrap verification exists. Broader shell, inherited-service, packaging, security, and pilot test commands remain **Planned** and must be documented only after verification.
 
 ## Open task-level question
 
-**Unknown:** Can the initial upstream scaffold simultaneously validate compatible immutable Gecko/Thunderbird pins, identify maintainable shell patch seams, and establish ownership-dependent release identifiers and trust infrastructure without expanding the downstream patch budget?
+**Unknown:** Can Mindy's branding and Precision Workspace shell replace Thunderbird identity cleanly while preserving maintainable upstream seams and avoiding unowned release identifiers or trust infrastructure?
 
-This question belongs to scaffold tasks and the final design gate; it must not be answered by invented identifiers or untested build instructions.
+This question belongs to personalization and release-readiness work; it must not be answered with invented identifiers or unverified packaging claims.
 
 ## Related documents
 

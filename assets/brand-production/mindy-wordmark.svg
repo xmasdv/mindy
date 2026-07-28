@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="160" viewBox="0 0 512 160" fill="none">
+  <title>Mindy wordmark</title>
+  <g stroke="#051B40" stroke-width="18" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M24 126V38L64 90L104 38V126"/>
+    <path d="M142 68V126M142 38V40"/>
+    <path d="M184 126V68M184 88Q198 66 220 70Q240 74 240 98V126"/>
+    <path d="M326 38V126M326 82Q310 66 288 70Q262 76 262 98Q262 122 288 128Q310 132 326 114"/>
+    <path d="M354 70L386 126L418 70M386 126Q376 146 356 146"/>
+  </g>
+</svg>

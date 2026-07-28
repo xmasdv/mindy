@@ -4,13 +4,13 @@
 
 Mindy gives multi-account independent professionals a focused desktop email workspace without removing access to the full account structure they depend on.
 
-**Status:** Product direction is **Decided** for design work. MVP details remain subject to the final design phase gate and pilot evidence. See the [roadmap](ROADMAP.md).
+**Status:** Product direction and the Mindy brand foundation are **Decided**. Personalizing the verified Thunderbird-derived baseline is the immediate priority; MVP details remain subject to pilot evidence. See the [roadmap](ROADMAP.md).
 
 ## Project state
 
-Mindy is an early implementation project. A pinned upstream checkout, reproducible Windows build, and first downstream mail-shell seam exist; there is no supported installation yet. The initial pilot target is Windows 11 x64.
+Mindy is an independent Thunderbird downstream. A pinned source checkout and downstream patch flow have produced a working Windows 11 x64 Thunderbird-derived executable, but it remains Thunderbird-branded and is not a supported Mindy package or installation.
 
-The approved **Precision Workspace** direction defines Mindy's primary inbox composition, visual tokens, responsive topology, and accessibility constraints. `DESIGN.md` is the durable system contract; the final logo asset remains provisional.
+The approved Precision Workspace direction, palette, provisional option 01 M-envelope mark, motion concept, and accessibility constraints are defined in [DESIGN.md](../DESIGN.md). The current product phase applies that identity before introducing new capabilities, including local AI.
 
 ## Problem
 
@@ -42,7 +42,7 @@ Mindy addresses that workflow problem. It is not an attempt to rebuild every gro
 4. Search, filter, work offline, and use established encryption and certificate features.
 5. Access account-backed calendars and contacts without making them the MVP design focus.
 6. Discover available migration paths when moving from an existing client.
-7. Optionally draft or revise text locally while retaining complete control over the result.
+7. Preserve the option to assess local drafting later without making it part of the current personalization priority.
 
 ## Product principles
 
@@ -80,12 +80,15 @@ The shell must be structurally Mindy's own information architecture and interact
 
 These are Thunderbird capabilities, not Mindy custom-feature claims. Mindy still owns shell integration, regression testing, and an honest presentation of inherited limitations.
 
-### Custom Mindy work
+### Current custom Mindy work
 
 - The dual-navigation Mindy shell.
 - A migration discovery and entry point, without promising a completed Postbox importer.
-- An optional local draft assistant within the boundary below.
 - Consent-safe, content-free instrumentation for pilot validation.
+
+### Deferred custom work
+
+- An optional local draft assistant, subject to deliberate reassessment and the boundary below.
 
 ### Out of scope
 
@@ -95,9 +98,9 @@ These are Thunderbird capabilities, not Mindy custom-feature claims. Mindy still
 - Full personal memory, embeddings, a knowledge graph, or continual training.
 - Autonomous mailbox operations.
 
-## AI interaction boundary
+## Deferred AI interaction boundary
 
-**Decided:** The assistant drafts text; the user remains the only actor.
+Local AI is not an active implementation priority. If the draft assistant is resumed, this **Decided** boundary applies: the assistant drafts text; the user remains the only actor.
 
 | Allowed | Prohibited in MVP |
 |---|---|
@@ -114,7 +117,7 @@ Generated text is untrusted output. It enters the compose editor only after prev
 
 **Planned:** Mindy's shell will preserve access and validate inherited behavior without redesigning these areas.
 
-**Known caveat:** Microsoft Exchange calendar and contacts are not complete in Thunderbird 153 ESR. Google Tasks also has an inherited gap. These limitations must be represented honestly during account setup, migration discovery, and pilot support.
+**Validation required:** The pinned baseline is Thunderbird 140.13.0esr. Exchange calendar/contact and Google Tasks limitations must be revalidated against this baseline before pilot claims are made, then represented honestly during account setup, migration discovery, and pilot support.
 
 ## Other inherited caveats
 
@@ -132,10 +135,10 @@ These are pilot decision gates, not scientific market facts. Numeric thresholds 
 | Multi-account use | Repeated unified and per-account workflows. | Participants can use both navigation modes without losing account context. |
 | Identity and data integrity | Sender identity, signatures, folders, offline state, and message operations. | No unresolved wrong-identity, loss, corruption, or cross-account defects. |
 | Retention | Weekly activity over a four-week pilot window. | The approved retention threshold is met with interpretable reasons for attrition. |
-| AI edit acceptance | Preview, apply, edit, reject, and disable events without content capture. | The approved acceptance threshold is met without safety-boundary violations. |
+| AI edit acceptance | Deferred until the assistant is deliberately resumed; then preview, apply, edit, reject, and disable events must exclude content capture. | No active threshold while the capability is deferred. |
 | Support burden | Setup and recurring support incidents. | Burden remains within the approved capacity threshold. |
 | Willingness to pay | Structured participant feedback after meaningful use. | The approved threshold supports continued product investment. |
 
 ## Related documents
 
-[Overview](../README.md) | [Design](../DESIGN.md) | [Architecture](ARCHITECTURE.md) | [Security](SECURITY.md) | [Roadmap](ROADMAP.md) | [Contributing](../CONTRIBUTING.md)
+[Overview](../README.md) | [Architecture](ARCHITECTURE.md) | [Security](SECURITY.md) | [Roadmap](ROADMAP.md) | [Contributing](../CONTRIBUTING.md)

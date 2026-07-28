@@ -2,7 +2,7 @@
 
 Mindy must protect mailbox content, profiles, account credentials, sender identity, and data integrity while processing untrusted inbound email and optional local model output. Security constraints apply before convenience features.
 
-> **Status:** There is no production version or release channel. This document defines pre-implementation invariants and planned controls; it is not a claim of completed hardening or certification.
+> **Status:** There is no production version or release channel. This document defines pre-release invariants and planned controls; it is not a claim of completed hardening or certification.
 
 ## Threat model
 

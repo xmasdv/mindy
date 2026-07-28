@@ -2,17 +2,17 @@
 
 Mindy advances through evidence-based phase gates rather than date promises. Each phase must satisfy its exit criteria before the next phase can be treated as committed implementation work.
 
-**Current phase:** Documentation and design gate.
+**Current phase:** Mindy brand foundation and personalization of the verified Thunderbird-derived baseline.
 
 ## Phase path
 
 | Phase | Outcome | Status |
 |---|---|---|
-| 1. Documentation and design gate | Canonical scope, architecture, security invariants, and task-level design are coherent. | **In progress** |
-| 2. Upstream scaffold and reproducible Windows build | Compatible pinned upstream sources produce a repeatable Windows 11 x64 build. | **Planned** |
-| 3. Vertical shell slice | One end-to-end Mindy workflow proves the shell and upstream seams. | **Planned** |
+| 1. Documentation and design gate | Canonical scope, architecture, security invariants, and visual authority are coherent. | **In progress** |
+| 2. Upstream scaffold and reproducible Windows build | Compatible pinned upstream sources produce a repeatable Windows 11 x64 build. | **Baseline build verified; hardening remains** |
+| 3. Mindy personalization and vertical shell slice | Branding and one end-to-end workflow prove Mindy's identity, shell, and upstream seams. | **In progress** |
 | 4. Inherited regression surface | Account, mail, identity, calendar, and contacts behavior is validated through Mindy. | **Planned** |
-| 5. Optional local AI | The constrained draft assistant works without mailbox authority. | **Planned** |
+| 5. Optional local AI | The constrained draft assistant works without mailbox authority. | **Deferred pending reassessment** |
 | 6. Consented pilot | Real users generate content-free evidence against provisional gates. | **Planned** |
 | 7. Decision gate | Evidence determines whether to continue, revise, narrow, or stop. | **Planned** |
 
@@ -21,16 +21,16 @@ Mindy advances through evidence-based phase gates rather than date promises. Eac
 ### Work
 
 - Keep the canonical document set internally consistent.
-- Finish the technical design and resolve task-level scaffold questions.
+- Maintain [DESIGN.md](../DESIGN.md) as the durable visual authority.
 - Distinguish inherited behavior, Mindy custom work, provisional details, and unknown ownership-dependent infrastructure.
 - Define threat cases and pre-pilot validation thresholds.
 
 ### Exit criteria
 
 - [ ] Product, architecture, security, roadmap, and contribution boundaries agree.
-- [ ] Final design phase gate passes.
-- [ ] Scaffold tasks specify how to validate pins, seams, patch ordering, and ownership-dependent identifiers.
-- [ ] No document claims runnable code, builds, domains, signing, or release infrastructure exists.
+- [x] Brand thesis, semantic color roles, layout, motion, states, accessibility, and anti-patterns are documented.
+- [ ] Canonical project documents remain consistent as personalization lands.
+- [ ] No document confuses the verified local baseline with a Mindy-branded release, supported installation, signing system, or update service.
 
 ## 2. Upstream scaffold and reproducible Windows build
 
@@ -40,6 +40,7 @@ Mindy advances through evidence-based phase gates rather than date promises. Eac
 - Pin both upstream revisions immutably and check compatibility through `.gecko_rev.yml`.
 - Establish the superproject/overlay and ordered minimal patch flow.
 - Use Mozilla build and packaging surfaces for Windows 11 x64.
+- Keep native source and object output outside OneDrive through the repository's `vendor/` junction and use resource-bounded builds.
 
 ### Exit criteria
 
@@ -49,10 +50,12 @@ Mindy advances through evidence-based phase gates rather than date promises. Eac
 - [ ] Provisional branding and release identifiers cannot be mistaken for owned production values.
 - [ ] Baseline upstream tests and packaging smoke checks are recorded.
 
-## 3. Vertical shell slice
+## 3. Mindy personalization and vertical shell slice
 
 ### Work
 
+- Replace Thunderbird branding with the provisional Mindy identity without inventing production publisher or update values.
+- Apply the [Precision Workspace visual authority](../DESIGN.md) without merely recoloring Thunderbird or imitating Outlook.
 - Implement a narrow Mindy shell path spanning account data, Unified Inbox, per-account tree, message reading, and compose entry.
 - Preserve visible account and identity context.
 - Prove adaptation seams without creating a parallel mailbox model.
@@ -83,6 +86,8 @@ Mindy advances through evidence-based phase gates rather than date promises. Eac
 - [ ] Migration UI promises discovery and available paths, not a guaranteed importer.
 
 ## 5. Optional local AI
+
+This phase is deferred. It requires an explicit product reassessment after personalization and inherited mail workflows are established.
 
 ### Work
 
@@ -134,7 +139,7 @@ The pilot does not imply launch. Review account success, multi-account behavior,
 | Mobile and webmail/SaaS | **Deferred outside MVP**. |
 | Teams and enterprise administration | **Deferred outside MVP**. |
 | Full calendar/contact redesign | **Deferred**; inherited accessible surfaces remain in MVP. |
-| Managed AI service | **Deferred outside MVP**. |
+| Local or managed AI capability | **Deferred pending deliberate reassessment**; the documented security boundary remains mandatory if resumed. |
 | Scheduled send and Gmail-style undo send | **Deferred custom work**; not native inherited features. |
 | Guaranteed Postbox importer | **Unknown**; MVP promises migration discovery, not importer completion. |
 | Personal memory, embeddings, knowledge graph, continual training | **Deferred outside MVP**. |
@@ -143,4 +148,4 @@ There are no delivery dates or platform commitments beyond this gated sequence.
 
 ## Related documents
 
-[Overview](../README.md) | [Product](PRODUCT.md) | [Design](../DESIGN.md) | [Architecture](ARCHITECTURE.md) | [Security](SECURITY.md) | [Contributing](../CONTRIBUTING.md)
+[Overview](../README.md) | [Product](PRODUCT.md) | [Architecture](ARCHITECTURE.md) | [Security](SECURITY.md) | [Contributing](../CONTRIBUTING.md)

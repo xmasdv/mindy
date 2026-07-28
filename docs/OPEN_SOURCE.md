@@ -2,7 +2,7 @@
 
 Mindy's core is open-source software under the [Mozilla Public License 2.0](../LICENSE). Commercial use is permitted, subject to the license terms.
 
-> Mindy is at an early, pre-implementation stage. This repository currently contains product, architecture, security, roadmap, and governance documents; it does not contain a runnable client or build.
+> Mindy is at an early implementation stage. The repository contains the downstream metadata, tooling, patches, and documentation for a verified local Thunderbird-derived Windows build. That executable remains Thunderbird-branded; no supported Mindy package, release, publisher, signing system, or update service is claimed.
 
 ## Core licensing
 
@@ -21,7 +21,7 @@ That separation cannot remove MPL obligations from covered core or Thunderbird-d
 
 ## Contribution model
 
-Issues and thoughtful proposals are welcome during the current design phase. Code pull requests should wait until there is a scoped issue, accepted design, task-level plan, and upstream scaffold; documentation and governance improvements may be proposed now.
+Issues and thoughtful proposals are welcome during the current personalization phase. Code pull requests require a scoped issue, accepted design, and task-level plan; documentation and governance improvements may also be proposed.
 
 Contributors should:
 
