@@ -1,23 +1,21 @@
 {
   "schema_version": 1,
-  "contract_id": "replace-with-versioned-contract-id",
-  "surface_ids": [],
-  "upstream": {"source": "thunderbird", "capability": "replace-me", "contract_version": 1},
-  "inputs": [],
+  "contract_id": "replace-me@1", "contract_version": 1,
+  "compatibility": {"minimum_upstream_contract": 1, "maximum_upstream_contract": 1},
+  "surface_ids": ["SH-01"],
+  "upstream": {"source": "thunderbird", "capability": "replace-me"},
+  "inputs": [{"name": "context", "schema": {"type": "object"}, "required": true, "nullable": false}],
   "normalized_state": {
-    "loading": "document shape and transition",
-    "ready": "document shape and transition",
-    "empty": "document shape and transition",
-    "error": "document recoverability and safe detail",
-    "unavailable": "document missing capability behavior"
+    "status": {"enum": ["loading", "ready", "empty", "error", "unavailable"]},
+    "data": {"schema": {"type": "object"}, "nullable": true, "null_when": ["loading", "empty", "error", "unavailable"]},
+    "loading": {"active_when": ["loading"], "progress": {"type": ["number", "null"]}},
+    "error": {"nullable": true, "schema": {"required": ["code", "message", "recoverable"]}}
   },
-  "commands": [],
-  "events": [],
-  "capabilities": [],
+  "commands": [{"name": "execute", "payload_schema": {"type": "object"}, "result_schema": {"type": "object"}, "enabled_when": ["ready"], "disabled_result": "reject", "errors": ["unavailable"]}],
+  "events": [{"name": "state-changed", "payload_schema": {"type": "object"}, "delivery": "ordered-at-most-once"}],
+  "capabilities": [{"name": "replace-me", "type": "boolean", "absent_behavior": "unavailable"}],
   "security_invariants": ["preserve upstream authorization and command enablement"],
   "accessibility_invariants": ["preserve names, roles, states, focus order, and announcements"],
-  "failure_mode": "fail visibly when the declared upstream capability disappears",
-  "fixtures": {"kind": "deterministic-synthetic", "real_credentials": false, "real_personal_data": false},
-  "owner": "unassigned",
-  "reviewer": "independent-review-required"
+  "fixtures": [{"id": "synthetic-default", "seed": "phase-0", "initial_status": "ready", "expected_events": [], "real_credentials": false, "real_personal_data": false}],
+  "owner": "unassigned", "reviewer": "independent-review-required"
 }
