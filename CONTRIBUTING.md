@@ -1,6 +1,6 @@
 # Contributing to Mindy
 
-Mindy is currently a pre-code project. Community members are welcome to open issues, discuss evidence, and describe user problems. Contributions should reduce uncertainty in the product, architecture, security model, or delivery plan without implying that a source tree or runnable build already exists.
+Mindy is an early Thunderbird downstream with a verified local Windows build baseline and active personalization work. Community members are welcome to open issues, discuss evidence, and describe user problems. Contributions must not imply that the Thunderbird-branded baseline is a supported Mindy release or installation.
 
 ## Issue-first governance
 
@@ -13,7 +13,7 @@ Mindy is currently a pre-code project. Community members are welcome to open iss
 
 ## Before proposing work
 
-1. Read the [project overview](README.md), [product definition](docs/PRODUCT.md), [architecture](docs/ARCHITECTURE.md), [security model](docs/SECURITY.md), [roadmap](docs/ROADMAP.md), and [open-source model](docs/OPEN_SOURCE.md).
+1. Read the [project overview](README.md), [product definition](docs/PRODUCT.md), [design authority](DESIGN.md), [architecture](docs/ARCHITECTURE.md), [security model](docs/SECURITY.md), [roadmap](docs/ROADMAP.md), and [open-source model](docs/OPEN_SOURCE.md).
 2. Open or join an issue to discuss scope before producing broad designs, generated code, patch sets, or implementation plans.
 3. Identify whether the change belongs upstream, in a small downstream patch, or in an isolated Mindy-owned component.
 4. State what is decided, planned, deferred, and unknown. Do not present design intent as implemented behavior.
@@ -24,8 +24,9 @@ Mindy is currently a pre-code project. Community members are welcome to open iss
 - Prefer inherited Thunderbird capability over a parallel Mindy implementation when the inherited behavior meets the product need.
 - Reject feature bloat that does not support the defined MVP jobs or pilot decisions.
 - Do not copy Postbox, eM Client, Thunderbird, Outlook, or other products' proprietary assets.
-- Do not introduce source code or broad patches without an accepted design and task-level artifact.
-- Do not add build instructions until a checkout and scripts exist and the commands have been verified.
+- Do not introduce broad patches without an accepted design and task-level artifact.
+- Keep native source and object output outside OneDrive. In the current Windows layout, `vendor/` is a junction to `C:\mozilla-source\mindy\vendor`, with the object directory at `C:\mozilla-source\mindy\vendor\gecko\obj-mindy-pilot`.
+- Keep builds resource-bounded and document build commands only after they have been verified; never treat a local build as release-readiness evidence.
 - Keep technical artifacts and issue titles or descriptions in professional English where practical.
 - Participate respectfully; critique ideas and evidence, not people.
 
@@ -51,9 +52,9 @@ Do not disclose vulnerabilities or sensitive details in public issues. Use the p
 
 ## Testing expectations
 
-**Current:** Documentation changes must be checked for internal consistency, accurate status labels, valid relative links, and unsupported claims.
+**Current:** Documentation changes must be checked for internal consistency, accurate status labels, valid relative links, and unsupported claims. Focused bootstrap verification exists for the pinned checkout and patch flow.
 
-**Planned after the scaffold exists:** Every behavior change must have coverage at the lowest useful layer, plus integration or end-to-end coverage where an upstream boundary, mailbox state, identity, installer, update, or AI sandbox is involved. The intended layers are described in [ARCHITECTURE.md](docs/ARCHITECTURE.md#testing-layers).
+**Required for behavior changes:** Add coverage at the lowest useful layer, plus integration or end-to-end coverage where an upstream boundary, mailbox state, identity, installer, update, or deferred AI sandbox is involved. The intended layers are described in [ARCHITECTURE.md](docs/ARCHITECTURE.md#testing-layers); layers not yet established must not be claimed.
 
 No contributor should claim tests, builds, or automation ran unless they exist and were actually executed.
 
@@ -80,4 +81,5 @@ Update the document that owns the changed decision instead of duplicating long e
 | Threats, invariants, trust, or disclosure | [SECURITY.md](docs/SECURITY.md) |
 | Sequence, phase gate, or deferral | [ROADMAP.md](docs/ROADMAP.md) |
 | Project summary or document map | [README.md](README.md) |
+| Visual identity, layout, color, motion, states, or accessibility | [DESIGN.md](DESIGN.md) |
 | Contribution and review practice | This file |

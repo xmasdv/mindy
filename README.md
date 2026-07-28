@@ -1,8 +1,8 @@
 # Mindy
 
-Mindy is an early open-source desktop email client project for multi-account independent professionals and reachable former Postbox users. It aims to make daily email simple, beautiful, fast, and reliable without accumulating feature bloat.
+Mindy is an early open-source desktop email client for multi-account independent professionals and reachable former Postbox users. It aims to make daily email simple, beautiful, fast, and reliable without accumulating feature bloat.
 
-> **Status: early implementation.** The pinned Thunderbird downstream builds on Windows 11 x64, the first mail-shell seam is integrated, and the Precision Workspace visual direction is approved. There is no supported installation yet.
+> **Status: personalization in progress.** A pinned Thunderbird/Gecko checkout and downstream patch flow have produced a working Windows 11 x64 Thunderbird-derived executable. It remains Thunderbird-branded and is not a supported Mindy package or installation.
 
 Mindy is intended as a small downstream of Thunderbird ESR and Gecko. It is not Thunderbird, Mozilla, Postbox, eM Client, or Outlook, and it is not affiliated with their owners. Those names and trademarks belong to their respective owners.
 
@@ -14,7 +14,7 @@ Mindy is not currently webmail, an email provider, a production application, a d
 2. Preserve full account and folder access instead of hiding protocol reality.
 3. Reuse mature Thunderbird capabilities and keep Mindy's downstream patch set small and isolated.
 4. Protect identity selection, mailbox data, profiles, and update trust before adding convenience.
-5. Keep optional local AI narrow, inspectable, and unable to act on a mailbox.
+5. Establish Mindy's identity and core mail workspace before considering optional new capabilities.
 
 ## MVP at a glance
 
@@ -25,13 +25,14 @@ Mindy is not currently webmail, an email provider, a production application, a d
 - Equal-access secondary work surface: the complete per-account folder tree.
 - Visual direction: an original Mindy shell, not a Thunderbird recolor or Outlook imitation.
 - Calendar and contacts: accessible and account-backed, but not redesigned for MVP.
-- AI: an optional, separately downloaded local draft assistant with no mailbox actions.
+- Brand foundation: the Precision Workspace shell and provisional M-envelope identity documented in [DESIGN.md](DESIGN.md).
 
 **Deferred**
 
 - macOS and Linux pilots, without rejecting future support.
 - Mobile, webmail/SaaS, teams, enterprise administration, and a full calendar or contacts redesign.
 - Managed AI, personal memory, embeddings, knowledge graphs, and continual training.
+- Local AI capabilities, until personalization and inherited mail workflows are established and deliberately reassessed.
 
 ## Inherited and custom scope
 
@@ -42,21 +43,21 @@ Mindy is not currently webmail, an email provider, a production application, a d
 | Calendar, contacts, OpenPGP, S/MIME, and import/export | Thunderbird | Inherited and kept accessible; no broad redesign. |
 | Mindy navigation and visual shell | Mindy | Custom MVP work. |
 | Migration discovery and entry point | Mindy | Custom MVP work; this is not a promise of a completed Postbox importer. |
-| Local draft assistant | Mindy | Optional custom MVP work, disabled until its runtime and model are separately downloaded. |
+| Local draft assistant | Mindy | Deferred custom work; existing security boundaries remain requirements if it is resumed. |
 | Pilot instrumentation | Mindy | Custom, consent-safe, content-free validation support. |
 
-Inherited does not mean gap-free. Notable caveats include incomplete Microsoft Exchange calendar/contact support in Thunderbird 153 ESR, no native scheduled send or Gmail-style undo send, no guaranteed official Postbox importer, and a Google Tasks gap. Mindy does not claim OS-keychain protection or full-profile encryption.
+Inherited does not mean gap-free. The pinned baseline is Thunderbird 140.13.0esr; Exchange calendar/contact and Google Tasks limitations must be revalidated against it before pilot claims are made. Other notable caveats include no native scheduled send or Gmail-style undo send and no guaranteed official Postbox importer. Mindy does not claim OS-keychain protection or full-profile encryption.
 
 ## Documentation
 
 | Document | Purpose |
 |---|---|
 | [Product](docs/PRODUCT.md) | Users, jobs, scope, interaction boundaries, and validation gates. |
-| [Design](DESIGN.md) | Precision Workspace tokens, component language, responsive rules, and visual guardrails. |
+| [Design](DESIGN.md) | Durable visual identity, layout, color, motion, state, and accessibility authority. |
 | [Architecture](docs/ARCHITECTURE.md) | Intended downstream architecture, trust boundaries, and design status. |
 | [Security](docs/SECURITY.md) | Threat model, invariants, telemetry exclusions, and disclosure guidance. |
 | [Roadmap](docs/ROADMAP.md) | Phase order, exit criteria, and deferred work. |
-| [Contributing](CONTRIBUTING.md) | Pre-code contribution and review rules. |
+| [Contributing](CONTRIBUTING.md) | Contribution, external build-storage, and review rules. |
 | [Open-source model](docs/OPEN_SOURCE.md) | Core licensing, contribution terms, and sustainable development boundaries. |
 
 These canonical documents define the public project. Existing market-research artifacts are supporting inputs only and are not authoritative product or engineering specifications.
@@ -71,6 +72,8 @@ Do not file security vulnerabilities as public issues. Follow the private report
 
 Mindy's core is licensed under the [Mozilla Public License 2.0](LICENSE), which permits commercial use subject to its terms. Thunderbird-derived files retain their applicable MPL obligations. Future separately distributed services or assets may use explicitly stated terms; see the [open-source model](docs/OPEN_SOURCE.md).
 
-## No runnable build yet
+## Development build status
 
-There are intentionally no build commands here. The upstream checkout, downstream scaffold, scripts, pins, identifiers, signing infrastructure, and update endpoints have not been established or validated. The first executable milestone is defined in the [roadmap](docs/ROADMAP.md).
+The repository contains immutable upstream pins, bootstrap tooling, and an ordered downstream patch flow. Native source and object files must remain outside OneDrive: the repository's `vendor/` path is a junction to `C:\mozilla-source\mindy\vendor`, and the current object directory is physically `C:\mozilla-source\mindy\vendor\gecko\obj-mindy-pilot`.
+
+Builds must remain external and resource-bounded. A local pilot build has succeeded, but no supported release, installer, publisher identity, signing infrastructure, or production update service is claimed here.
