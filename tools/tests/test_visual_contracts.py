@@ -48,10 +48,16 @@ class VisualContractAdversarialTests(unittest.TestCase):
     def test_rejects_same_actors_and_rejected_reuse(self):
         manifest = self.accepted(); manifest["review_actor"] = "capture"
         with self.assertRaisesRegex(v.ContractError, "independent actors"):
-            v.validate_manifest(manifest, check_files=False)
+            v.validate(evidence=manifest)
         manifest = self.accepted(); manifest["records"][0] = copy.deepcopy(self.rejected["records"][0])
         with self.assertRaisesRegex(v.ContractError, "cannot be promoted"):
-            v.validate_manifest(manifest, v.rejected_references(self.rejected), check_files=False)
+            v.validate(evidence=manifest)
+
+    def test_top_level_rejects_approved_historical_authority(self):
+        authority = v.load("contracts/visual/authority.json")
+        authority["rejected_historical_evidence"]["approved_baseline"] = True
+        with self.assertRaisesRegex(v.ContractError, "rejected evidence authority differs"):
+            v.validate(authority=authority)
 
 
 if __name__ == "__main__":

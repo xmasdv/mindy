@@ -60,7 +60,7 @@ def validate_registry(schema, counts, instance=None):
 def rejected_references(manifest):
     return ({item["path"] for item in manifest["records"]}, {item["sha256"] for item in manifest["records"]})
 
-def validate_manifest(manifest, rejected=(set(), set()), check_files=True):
+def validate_manifest(manifest, check_files=True):
     required = {"schema_version", "classification", "baseline_status", "source_revisions", "patch_series_sha256", "artifact_sha256", "fixture", "environment", "captured_at", "capture_actor", "review_actor", "records"}
     require(required <= manifest.keys(), "manifest provenance is incomplete")
     revisions = manifest["source_revisions"]
@@ -88,7 +88,7 @@ def validate_manifest(manifest, rejected=(set(), set()), check_files=True):
         require(not any(str(value).startswith("unknown") for value in environment.values()), "candidate environment contains unknown provenance")
     if classification == "accepted_baseline":
         require(str(manifest["review_actor"] or "").strip() and manifest["review_actor"] != manifest["capture_actor"], "accepted baseline requires independent actors")
-        paths, hashes = rejected
+        paths, hashes = rejected_references(load("contracts/visual/rejected-evidence.json"))
         require(not any(item["path"] in paths or item["sha256"] in hashes for item in records), "rejected evidence cannot be promoted or reused")
     if classification == "rejected_historical_evidence":
         require(manifest.get("redacted") is True and str(manifest.get("reason", "")).strip() and manifest["review_actor"] is None, "rejected evidence classification is incomplete")
@@ -106,8 +106,9 @@ def validate_adapter(template):
     require(all(item["enabled_when"] and item["disabled_result"] == "reject" for item in template["commands"]), "adapter command enablement is incomplete")
     require(all(not item["real_credentials"] and not item["real_personal_data"] for item in template["fixtures"]), "adapter fixtures must be synthetic")
 
-def validate():
-    authority, sources = load("contracts/visual/authority.json"), load("sources.lock")
+def validate(authority=None, evidence=None):
+    authority = load("contracts/visual/authority.json") if authority is None else authority
+    sources = load("sources.lock")
     visual = authority["visual_authority"]
     require({item["path"] for item in visual} == REQUIRED_VISUAL, "visual authority paths differ from the required set")
     for item in visual + authority["implementation_evidence"]:
@@ -123,7 +124,11 @@ def validate():
     require(audit == exact and Counter(item[:2] for item in audit) == Counter(inventory["family_counts"]), "audit and exact registry differ")
     screenshot_schema = load("contracts/visual/screenshot-manifest.schema.json")
     require(screenshot_schema["properties"]["records"]["minItems"] == 1 and screenshot_schema["x-independent-actors"] and screenshot_schema["x-rejected-promotion"] is False, "screenshot schema invariants differ")
-    validate_manifest(load(authority["rejected_historical_evidence"]["manifest"]))
+    rejected = authority["rejected_historical_evidence"]
+    require(rejected == {"manifest": "contracts/visual/rejected-evidence.json", "classification": "rejected_historical_evidence", "approved_baseline": False}, "rejected evidence authority differs")
+    validate_manifest(load(rejected["manifest"]))
+    if evidence is not None:
+        validate_manifest(evidence)
     validate_adapter(load("contracts/visual/adapter-contract.template.json"))
     unknown_path, unknown_anchor = authority["external_native_unknowns"]["log"].split("#", 1)
     policy = safe_path(unknown_path).read_text(encoding="utf-8")
