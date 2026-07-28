@@ -1,0 +1,21 @@
+{
+  "schema_version": 1, "classification": "rejected_historical_evidence", "baseline_status": "rejected",
+  "reason": "Redacted historical captures show rejected partial styling; they are comparison evidence, not authority or goldens.",
+  "redacted": true,
+  "source_revisions": {"gecko": "611eeda342a90baf6918fe754fcf168087b3767e", "comm": "faf78db7dfb184002adc6b859c8ad395ff216239"},
+  "patch_series_sha256": null, "artifact_sha256": null,
+  "fixture": "historical account-free profile; personal identity removed; full fixture provenance unavailable",
+  "environment": {"os": "Windows", "scale": "unknown-historical", "app_zoom": "unknown-historical", "theme": "unknown-historical", "locale": "unknown-historical", "direction": "unknown-historical"},
+  "captured_at": "2026-07-28", "capture_actor": "retained-historical-runtime-capture", "review_actor": null,
+  "known_unknowns": ["build artifact identity", "patch-series identity", "display scale", "app zoom", "locale and direction"],
+  "records": [
+    {"name": "initial-first-run", "state": "first-run", "dimensions": "1280x809", "redaction": "real name replaced with synthetic Alex Morgan", "path": "evidence/visual/rejected-historical/rejected-01-initial-first-run.png", "sha256": "fe933ee4b042fcbc88c616bc623339be2656ee575965ebfaeb5808204d40589a"},
+    {"name": "account-not-configured", "state": "account-free-confirmation", "dimensions": "700x310", "redaction": "account form and desktop context cropped", "path": "evidence/visual/rejected-historical/rejected-02-account-not-configured-confirmation.png", "sha256": "4a76a52fa78fae65d1239ea5b5d07d7d42a11ab3af832c8391ab353cab99bdd9"},
+    {"name": "account-not-configured-print", "state": "account-free-print-boundary", "dimensions": "565x250", "redaction": "account form and unrelated context cropped", "path": "evidence/visual/rejected-historical/rejected-02b-account-not-configured-printwindow.png", "sha256": "070bf512c5420272f3a69a4a31db0079e360b4dd5f02f04f7dcddc459e760423"},
+    {"name": "thunderbird-privacy-residue", "state": "privacy-provider-residue", "dimensions": "1920x1020", "path": "evidence/visual/rejected-historical/rejected-03-thunderbird-privacy-notice.png", "sha256": "3fb4dbcc5f0586e0ec8d16ea0859315f369b69e72fb14afa837529cd3323f76e"},
+    {"name": "account-free-shell", "state": "account-free-shell", "dimensions": "1920x1020", "path": "evidence/visual/rejected-historical/rejected-04-outer-shell-account-central.png", "sha256": "2d18844aa7160e62708237f920e3c4a177a47cabfda431b202acd040e6b3e852"},
+    {"name": "about-mindy", "state": "about", "dimensions": "688x338", "path": "evidence/visual/rejected-historical/rejected-05-about-mindy.png", "sha256": "3ddce5e35381c666238e53634bdd215ef2dcf75988b5affdce98d1a7dea2ee07"},
+    {"name": "narrow-main-focus", "state": "narrow-keyboard-focus", "dimensions": "1225x816", "path": "evidence/visual/rejected-historical/rejected-06-narrow-main-focus.png", "sha256": "8255271e6a3285348a8e7df9676768ecc3239b74186dcd65c5199e8418104bd6"},
+    {"name": "restored-wide-main", "state": "restored-wide", "dimensions": "1536x816", "path": "evidence/visual/rejected-historical/rejected-07-restored-wide-main.png", "sha256": "0218bde9a2d3dad4c1a317fda220a42b55d414c433f015ee6fe7fc014f65d1ca"}
+  ]
+}

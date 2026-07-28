@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mindy.invalid/contracts/visual/surface-registry.schema.json",
+  "title": "Mindy visual surface registry",
+  "type": "object", "required": ["schema_version", "audit_path", "surfaces"],
+  "properties": {
+    "schema_version": {"const": 1}, "audit_path": {"const": "docs/VISUAL-AUDIT.md"},
+    "surfaces": {"type": "array", "minItems": 80, "maxItems": 80, "uniqueItems": true, "items": {
+      "type": "object", "required": ["id", "owner", "boundary", "adapter_contract"],
+      "properties": {"id": {"type": "string"}, "owner": {"enum": ["mindy", "thunderbird", "native", "provider", "shared"]},
+        "boundary": {"enum": ["owned", "adapter", "inherited-native", "inherited-external"]},
+        "adapter_contract": {"type": ["string", "null"]}},
+      "allOf": [
+        {"if": {"properties": {"boundary": {"const": "adapter"}}}, "then": {"properties": {"adapter_contract": {"type": "string", "minLength": 1}}}, "else": {"properties": {"adapter_contract": {"type": "null"}}}},
+        {"oneOf": [
+          {"properties": {"owner": {"const": "mindy"}, "boundary": {"enum": ["owned", "adapter"]}}},
+          {"properties": {"owner": {"enum": ["thunderbird", "shared"]}, "boundary": {"const": "adapter"}}},
+          {"properties": {"owner": {"const": "native"}, "boundary": {"const": "inherited-native"}}},
+          {"properties": {"owner": {"const": "provider"}, "boundary": {"const": "inherited-external"}}}]}
+      ], "additionalProperties": false}}
+  },
+  "x-exact-families": {
+    "SH": ["SH-01", "SH-02", "SH-03", "SH-04", "SH-05", "SH-06", "SH-07"],
+    "AC": ["AC-01", "AC-02", "AC-03", "AC-04", "AC-05", "AC-06", "AC-07", "AC-08"],
+    "MW": ["MW-01", "MW-02", "MW-03", "MW-04", "MW-05", "MW-06", "MW-07", "MW-08", "MW-09", "MW-10"],
+    "RD": ["RD-01", "RD-02", "RD-03", "RD-04", "RD-05", "RD-06"],
+    "CP": ["CP-01", "CP-02", "CP-03", "CP-04", "CP-05", "CP-06", "CP-07"],
+    "SR": ["SR-01", "SR-02", "SR-03", "SR-04"],
+    "CA": ["CA-01", "CA-02", "CA-03", "CA-04", "CA-05", "CA-06", "CA-07"],
+    "CT": ["CT-01", "CT-02", "CT-03", "CT-04", "CT-05"],
+    "ST": ["ST-01", "ST-02", "ST-03", "ST-04", "ST-05", "ST-06", "ST-07", "ST-08", "ST-09"],
+    "SY": ["SY-01", "SY-02", "SY-03", "SY-04", "SY-05", "SY-06", "SY-07", "SY-08", "SY-09", "SY-10", "SY-11"],
+    "SF": ["SF-01", "SF-02", "SF-03"], "AX": ["AX-01", "AX-02", "AX-03"]
+  },
+  "x-valid-owner-boundaries": {"mindy": ["owned", "adapter"], "thunderbird": ["adapter"], "shared": ["adapter"], "native": ["inherited-native"], "provider": ["inherited-external"]},
+  "x-adapter-rule": "adapter requires a contract path; every other boundary requires null",
+  "x-validator": "tools/validate-visual-contracts.py", "additionalProperties": false
+}
