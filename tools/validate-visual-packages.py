@@ -18,13 +18,19 @@ ALLOWED = {"comm/mail/moz.build", "comm/mail/mindy/moz.build",
 RAW_RESOURCE = "resource:///modules/mindy/"
 STATIC_IMPORT = re.compile(r'import\s*\{\s*\w+\s*\}\s*from\s*"(resource:///modules/mindy/[^"\s]+)"\s*;')
 TEST_IMPORT = re.compile(r'ChromeUtils\.importESModule\(\s*"resource:///modules/mindy/ui/VisualPackage\.sys\.mjs"\s*\)')
-TOKEN = re.compile(r'"[^"\n]*"|[A-Za-z_$][\w$]*|\d+|[{}()[\],.:;=]')
-# Metadata grammar: static imports plus one exact frozen export; comments/whitespace are insignificant.
+TOKEN = re.compile(r'"[^"\n]*"|[A-Za-z_$][\w$]*|\d+|[+{}()[\],.:;=]')
+# Phase 1A grammar: exact manifests and frozen metadata exports; comments/whitespace are insignificant.
 GRAMMAR = {
     "comm/mail/mindy/adapters/VisualAuthorityAdapter.sys.mjs": 'import { VisualRegistry } from "resource:///modules/mindy/contracts/VisualRegistry.sys.mjs"; export const VisualAuthority = Object.freeze({ registry: VisualRegistry, });',
     "comm/mail/mindy/theme/ThemeOwnership.sys.mjs": 'export const ThemeOwnership = Object.freeze({ layer: "theme", visualValues: false });',
     "comm/mail/mindy/brand/BrandOwnership.sys.mjs": 'export const BrandOwnership = Object.freeze({ layer: "brand", visualAssets: false });',
     "comm/mail/mindy/ui/VisualPackage.sys.mjs": 'import { VisualAuthority } from "resource:///modules/mindy/adapters/VisualAuthorityAdapter.sys.mjs"; import { BrandOwnership } from "resource:///modules/mindy/brand/BrandOwnership.sys.mjs"; import { ThemeOwnership } from "resource:///modules/mindy/theme/ThemeOwnership.sys.mjs"; export const VisualPackage = Object.freeze({ authority: VisualAuthority, brand: BrandOwnership, theme: ThemeOwnership, });',
+    "comm/mail/moz.build": '"mindy",', "comm/mail/mindy/moz.build": 'DIRS += ["contracts", "adapters", "theme", "brand", "ui"] TEST_DIRS += ["test"]',
+    **{f"comm/mail/mindy/{root}/moz.build": f'EXTRA_JS_MODULES.mindy.{root} += ["{name}"]' for root, name in {
+        "contracts": "VisualRegistry.sys.mjs", "adapters": "VisualAuthorityAdapter.sys.mjs", "theme": "ThemeOwnership.sys.mjs",
+        "brand": "BrandOwnership.sys.mjs", "ui": "VisualPackage.sys.mjs"}.items()},
+    "comm/mail/mindy/test/moz.build": 'XPCSHELL_TESTS_MANIFESTS += ["xpcshell.toml"]',
+    "comm/mail/mindy/test/xpcshell.toml": '[DEFAULT] ["test_visual_package.js"]',
 }
 
 class PackageError(ValueError):
@@ -116,30 +122,23 @@ def added_files(patch=None):
     return files
 
 def validate_packages(files):
-    require(files.get("comm/mail/moz.build") == '    "mindy",', "package registration hook differs")
-    require('DIRS += ["contracts", "adapters", "theme", "brand", "ui"]' in files.get("comm/mail/mindy/moz.build", "") and
-            'TEST_DIRS += ["test"]' in files["comm/mail/mindy/moz.build"], "package roots are unregistered")
+    for path, expected in GRAMMAR.items():
+        require(path in files and module_tokens(files[path])[0] == module_tokens(expected)[0], f"manifest/module grammar differs: {path}")
     modules = {path: text for path, text in files.items() if path.endswith((".mjs", ".js"))}
     edges = set()
     for path, text in modules.items():
         parts = PurePosixPath(path).parts; source = "test" if "test" in parts else parts[3]
-        require(f'EXTRA_JS_MODULES.mindy.{source}' in files.get(
-            f"comm/mail/mindy/{source}/moz.build", "") or source == "test",
-            f"unregistered package module: {path}")
         if source == "test":
             require(text.count(RAW_RESOURCE) == 1 and TEST_IMPORT.search(text),
                     "unclassified Mindy test resource")
             edges.add(("test", "ui")); continue
-        expected = generated_registry() if source == "contracts" else GRAMMAR.get(path)
         actual, code = module_tokens(text)
-        require(expected is not None and actual == module_tokens(expected)[0],
-                f"metadata module grammar differs: {path}")
+        if source == "contracts":
+            require(actual == module_tokens(generated_registry())[0], f"metadata module grammar differs: {path}")
         imports = STATIC_IMPORT.findall(code)
         require(text.count(RAW_RESOURCE) == len(imports), f"unclassified Mindy resource: {path}")
         edges.update((source, url.removeprefix(RAW_RESOURCE).split("/", 1)[0]) for url in imports)
     require(edges == REQUIRED_EDGES, f"package import edges differ: {sorted(edges)}")
-    require('XPCSHELL_TESTS_MANIFESTS += ["xpcshell.toml"]' in
-            files.get("comm/mail/mindy/test/moz.build", ""), "test root is unregistered")
 
 def validate_pins(authority=None, sources=None):
     authority, sources = authority or load("contracts/visual/authority.json"), sources or load("sources.lock")

@@ -14,7 +14,7 @@ class VisualPackageAdversarialTests(unittest.TestCase):
         with self.assertRaisesRegex(v.PackageError, message):
             v.validate_packages(files)
 
-    def test_rejects_fail_closed_module_grammar(self):
+    def test_rejects_fail_closed_package_grammar(self):
         theme = "comm/mail/mindy/theme/ThemeOwnership.sys.mjs"
         ui = "comm/mail/mindy/ui/VisualPackage.sys.mjs"
         suffixes = [
@@ -29,12 +29,14 @@ class VisualPackageAdversarialTests(unittest.TestCase):
             files["comm/mail/mindy/contracts/VisualRegistry.sys.mjs"].replace('"SH-02"', '"SH-01"')), "grammar differs")
         files = v.added_files()
         files[theme] = "/* ownership */\n" + files[theme] + " // metadata"
+        files["comm/mail/mindy/moz.build"] = "/* roots */\n" + files["comm/mail/mindy/moz.build"] + " // exact"
         v.validate_packages(files)
-    def test_rejects_dead_root_and_unregistered_hook(self):
-        self.rejects(lambda f: f.__setitem__("comm/mail/mindy/ui/VisualPackage.sys.mjs",
-            f["comm/mail/mindy/ui/VisualPackage.sys.mjs"].replace("/theme/ThemeOwnership.sys.mjs", "/brand/BrandOwnership.sys.mjs")), "grammar differs")
-        self.rejects(lambda f: f.__setitem__("comm/mail/moz.build", ""), "registration hook")
-
+        manifests = [("comm/mail/mindy/moz.build", '\nDIRS += ["tokens"]'), ("comm/mail/mindy/theme/moz.build", '\nEXTRA_JS_MODULES.mindy.theme += ["Other.sys.mjs"]'),
+            ("comm/mail/mindy/test/xpcshell.toml", '\n["missing.js"]'), ("comm/mail/mindy/moz.build", '\nTEST_DIRS += ["test"]'),
+            ("comm/mail/mindy/moz.build", "\nUNKNOWN = true"), ("comm/mail/moz.build", None), ("comm/mail/mindy/test/moz.build", None)]
+        for path, suffix in manifests:
+            self.rejects(lambda data, key=path, value=suffix: data.__setitem__(key, "" if value is None else data[key] + value), "manifest/module grammar")
+        self.rejects(lambda data: data.__setitem__(ui, data[ui].replace("/theme/ThemeOwnership.sys.mjs", "/brand/BrandOwnership.sys.mjs")), "grammar differs")
     def test_rejects_unsafe_and_linked_paths(self):
         with self.assertRaisesRegex(v.PackageError, "unsafe path"):
             v.safe_path("../outside")
@@ -67,14 +69,13 @@ class VisualPackageAdversarialTests(unittest.TestCase):
                 with self.assertRaisesRegex(v.PackageError, "target scope differs"):
                     v.added_files(patch)
 
-    def test_rejects_wrong_order_pin_and_missing_test_registration(self):
+    def test_rejects_wrong_order_and_pin(self):
         with mock.patch.object(v, "EXPECTED_SERIES", tuple(reversed(v.EXPECTED_SERIES))):
             with self.assertRaisesRegex(v.PackageError, "identity/order"):
                 v.series()
         sources = v.load("sources.lock"); sources["comm"]["revision"] = "0" * 40
         with self.assertRaisesRegex(v.PackageError, "source pins differ"):
             v.validate_pins(sources=sources)
-        self.rejects(lambda f: f.__setitem__("comm/mail/mindy/test/moz.build", ""), "test root is unregistered")
 
     def test_ordered_series_applies_to_exact_pinned_fixture(self):
         self.assertEqual("PASS(exact pinned fixture, ordered 0002+0003)", v.applicability())
