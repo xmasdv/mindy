@@ -36,6 +36,11 @@ def load(raw):
 def digest(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
+def patch_digest(path):
+    data = path.read_bytes()
+    require(b"\r" not in data, f"patch bytes must use LF: {path}")
+    return hashlib.sha256(data).hexdigest()
+
 def validate_registry(schema, counts, instance=None):
     families = schema["x-exact-families"]
     require(set(families) == set(counts), "registry families differ from authority")
@@ -111,10 +116,12 @@ def validate(authority=None, evidence=None):
     sources = load("sources.lock")
     visual = authority["visual_authority"]
     require({item["path"] for item in visual} == REQUIRED_VISUAL, "visual authority paths differ from the required set")
-    for item in visual + authority["implementation_evidence"]:
+    for item in visual:
         require(digest(safe_path(item["path"])) == item["sha256"], f"authority hash mismatch: {item['path']}")
     implementation = authority["implementation_evidence"]
     require({item["path"] for item in implementation} == {"patches/0002-mindy-mail-shell.patch"} and not implementation[0]["authority"], "implementation evidence paths differ")
+    for item in implementation:
+        require(patch_digest(safe_path(item["path"])) == item["sha256"], f"authority hash mismatch: {item['path']}")
     behavior = authority["behavior_authority"]
     require(behavior["path"] == "sources.lock" and digest(safe_path(behavior["path"])) == behavior["sha256"], "behavior authority differs")
     require(sources["gecko"]["revision"] == behavior["gecko_revision"] and sources["comm"]["revision"] == behavior["comm_revision"], "source pins differ")

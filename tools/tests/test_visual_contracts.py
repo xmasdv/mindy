@@ -1,4 +1,4 @@
-import copy, importlib.util, unittest
+import copy, importlib.util, subprocess, tempfile, unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -58,6 +58,27 @@ class VisualContractAdversarialTests(unittest.TestCase):
         authority["rejected_historical_evidence"]["approved_baseline"] = True
         with self.assertRaisesRegex(v.ContractError, "rejected evidence authority differs"):
             v.validate(authority=authority)
+
+    def test_patch_bytes_are_lf_and_windows_input_cleans_to_the_same_blob(self):
+        patches = sorted((ROOT / "patches").glob("*.patch"))
+        self.assertTrue(patches)
+        for patch in patches:
+            self.assertNotIn(b"\r", patch.read_bytes(), patch.name)
+            attribute = subprocess.check_output(["git", "check-attr", "eol", "--", str(patch)], cwd=ROOT, text=True)
+            self.assertTrue(attribute.rstrip().endswith(": lf"), attribute)
+        def clean_hash(data):
+            return subprocess.run(
+                ["git", "-c", "core.autocrlf=true", "hash-object", "--stdin", "--path=patches/example.patch"],
+                cwd=ROOT, input=data, capture_output=True, check=True,
+            ).stdout
+        self.assertEqual(clean_hash(b"line one\nline two\n"), clean_hash(b"line one\r\nline two\r\n"))
+
+    def test_validator_rejects_crlf_instead_of_normalizing_it(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            patch = Path(temporary) / "corrupt.patch"
+            patch.write_bytes(b"line one\r\nline two\r\n")
+            with self.assertRaisesRegex(v.ContractError, "patch bytes must use LF"):
+                v.patch_digest(patch)
 
 
 if __name__ == "__main__":
