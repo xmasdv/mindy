@@ -16,7 +16,7 @@
     "comm_revision": "faf78db7dfb184002adc6b859c8ad395ff216239"
   },
   "implementation_evidence": [
-    {"path": "patches/0002-mindy-mail-shell.patch", "sha256": "28901db5858612bf04873874eefa527ed367c6acb2a202306621e1c6f7ba31d1", "authority": false}
+    {"path": "patches/0002-mindy-mail-shell.patch", "sha256": "3d7121e6b25d6eb09c8689197704240084a7b69628a494b657a5c556cd6ab578", "authority": false}
   ],
   "rejected_historical_evidence": {
     "manifest": "contracts/visual/rejected-evidence.json",

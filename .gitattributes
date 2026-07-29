@@ -8,6 +8,7 @@
 *.yaml text eol=lf
 *.md text eol=lf
 *.json text eol=lf
+patches/*.patch text eol=lf
 
 *.7z binary
 *.bz2 binary
