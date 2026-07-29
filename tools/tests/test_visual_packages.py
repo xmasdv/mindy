@@ -78,4 +78,36 @@ class VisualPackageAdversarialTests(unittest.TestCase):
             v.validate_pins(sources=sources)
 
     def test_ordered_series_applies_to_exact_pinned_fixture(self):
-        self.assertEqual("PASS(exact pinned fixture, ordered 0002+0003)", v.applicability())
+        self.assertEqual("PASS(exact pinned fixture, ordered 0002+0003+0004)", v.applicability())
+
+    def test_executes_host_contract_and_rejects_adversarial_mutations(self):
+        v.validate_host()
+        patch = v.safe_path(f"patches/{v.HOST_PATCH}").read_text()
+        mutations = [
+            ('pref("mindy.visual.enabled", false);', 'pref("mindy.visual.enabled", true);'),
+            ('getBoolPref("mindy.visual.enabled", false)', "false"),
+            ('initialize(window, "about3Pane"', 'initialize(window, "unknown"'),
+            ('contracts/VisualHost.sys.mjs', 'contracts/MissingHost.sys.mjs'),
+            ('registry === VisualRegistry', "true"),
+            ('states.delete(host);', "return disabled;"),
+            ('states.set(host, state);', "return state;"),
+            ('const states = new WeakMap();', "const states = new WeakMap(); Services.io.offline;"),
+            ('surfaceClaim: false', 'surfaceClaim: true'),
+            ('browser_mindyVisualHost.js', 'browser_unregistered.js'),
+            ('const states = new WeakMap();', 'const states = new WeakMap(); const color = "#fff";'),
+        ]
+        for before, after in mutations:
+            with self.subTest(before=before), tempfile.TemporaryDirectory() as temporary:
+                mutated = Path(temporary) / "mutated.patch"
+                mutated.write_text(patch.replace(before, after, 1))
+                with self.assertRaises(v.PackageError):
+                    v.validate_host(mutated)
+        with tempfile.TemporaryDirectory() as temporary:
+            mutated = Path(temporary) / "extra.patch"
+            mutated.write_text(patch + "\ndiff --git a/comm/mail/mindy/extra.js b/comm/mail/mindy/extra.js\nnew file mode 100644\n--- /dev/null\n+++ b/comm/mail/mindy/extra.js\n@@ -0,0 +1 @@\n+export {};\n")
+            with self.assertRaisesRegex(v.PackageError, "target scope"):
+                v.validate_host(mutated, execute=False)
+            paths = v.series(); mutated.write_text(patch.replace("switch-off", "drift", 1))
+            with mock.patch.object(v, "series", return_value=[*paths[:2], mutated]):
+                with self.assertRaisesRegex(v.PackageError, "patch identity"):
+                    v.validate()

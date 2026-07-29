@@ -1,0 +1,210 @@
+diff --git a/comm/mail/base/content/about3Pane.xhtml b/comm/mail/base/content/about3Pane.xhtml
+--- a/comm/mail/base/content/about3Pane.xhtml
++++ b/comm/mail/base/content/about3Pane.xhtml
+@@ -9,7 +9,6 @@
+ <html xmlns="http://www.w3.org/1999/xhtml"
+       xmlns:xul="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
+-      lightweightthemes="true"
+-      data-mindy-shell="true">
++      lightweightthemes="true">
+ <head>
+   <meta charset="utf-8" />
+   <title id="about3PaneTitle"></title>
+@@ -32,7 +31,6 @@
+   <link rel="stylesheet" href="chrome://messenger/skin/shared/tree-listbox.css" />
+   <link rel="stylesheet" href="chrome://messenger/skin/searchBox.css" />
+   <link rel="stylesheet" href="chrome://messenger/skin/about3Pane.css" />
+-  <link rel="stylesheet" href="chrome://messenger/skin/mindyMail.css" />
+-
++
+   <link rel="localization" href="messenger/about3Pane.ftl" />
+   <link rel="localization" href="messenger/treeView.ftl" />
+diff --git a/comm/mail/base/content/about3Pane.js b/comm/mail/base/content/about3Pane.js
+--- a/comm/mail/base/content/about3Pane.js
++++ b/comm/mail/base/content/about3Pane.js
+@@ -97,8 +97,9 @@ var accountCentralBrowser;
+ /**
+  * HTML body element handling the general layout of the about3pane.
+  */
+ var paneLayout;
++var mindyVisualHost;
+-
++
+ /**
+  * HTML element handling the swap between message, multimessage, and browser
+  * XUL views.
+@@ -210,3 +211,23 @@ window.addEventListener("DOMContentLoaded", async event => {
++  try {
++    if (Services.prefs.getBoolPref("mindy.visual.enabled", false)) {
++      ({ VisualHost: mindyVisualHost } = await ChromeUtils.importESModule(
++        "resource:///modules/mindy/contracts/VisualHost.sys.mjs"
++      ));
++      const { VisualPackage } = ChromeUtils.importESModule(
++        "resource:///modules/mindy/ui/VisualPackage.sys.mjs"
++      );
++      mindyVisualHost.initialize(window, "about3Pane", VisualPackage.authority.registry);
++    }
++  } catch (error) {
++    try {
++      mindyVisualHost?.reject(window, "startup-error");
++    } catch {}
++    try {
++      console.error("Mindy visual host startup-error", error);
++    } catch {}
++  } finally {
++    hasDOMContentLoaded.resolve();
++  }
++
+   // Update the state of the about:3pane being fully loaded.
+-  hasDOMContentLoaded.resolve();
+ });
+@@ -218,4 +239,5 @@ window.addEventListener("unload", () => {
+   folderPane.uninit();
+   threadPane.uninit();
+   threadPaneHeader.uninit();
++  mindyVisualHost?.cleanup(window);
+ });
+diff --git a/comm/mail/mindy/moz.build b/comm/mail/mindy/moz.build
+--- a/comm/mail/mindy/moz.build
++++ b/comm/mail/mindy/moz.build
+@@ -1,2 +1,3 @@
+ DIRS += ["contracts", "adapters", "theme", "brand", "ui"]
+ TEST_DIRS += ["test"]
++JS_PREFERENCE_FILES += ["mindy.js"]
+diff --git a/comm/mail/mindy/mindy.js b/comm/mail/mindy/mindy.js
+new file mode 100644
+--- /dev/null
++++ b/comm/mail/mindy/mindy.js
+@@ -0,0 +1 @@
++pref("mindy.visual.enabled", false);
+diff --git a/comm/mail/mindy/contracts/moz.build b/comm/mail/mindy/contracts/moz.build
+--- a/comm/mail/mindy/contracts/moz.build
++++ b/comm/mail/mindy/contracts/moz.build
+@@ -1 +1 @@
+-EXTRA_JS_MODULES.mindy.contracts += ["VisualRegistry.sys.mjs"]
++EXTRA_JS_MODULES.mindy.contracts += ["VisualHost.sys.mjs", "VisualRegistry.sys.mjs"]
+diff --git a/comm/mail/mindy/contracts/VisualHost.sys.mjs b/comm/mail/mindy/contracts/VisualHost.sys.mjs
+new file mode 100644
+--- /dev/null
++++ b/comm/mail/mindy/contracts/VisualHost.sys.mjs
+@@ -0,0 +1,49 @@
++import { VisualRegistry } from "resource:///modules/mindy/contracts/VisualRegistry.sys.mjs";
++
++const states = new WeakMap();
++const disabled = Object.freeze({
++  status: "disabled", code: "switch-off", hook: null,
++  inherited: true,
++  registryCount: 0, authoritySha256: null, surfaceClaim: false,
++});
++
++function diagnostic(status, code, hook = null, registry = null) {
++  return Object.freeze({
++    status, code, hook,
++    inherited: status != "active",
++    registryCount: registry?.surfaceIds?.length ?? 0,
++    authoritySha256: registry?.authoritySha256 ?? null,
++    surfaceClaim: false,
++  });
++}
++
++function validRegistry(registry) {
++  const ids = registry?.surfaceIds;
++  return registry === VisualRegistry &&
++    ids.length == 80 && new Set(ids).size == 80 &&
++    registry.authoritySha256 == VisualRegistry.authoritySha256 &&
++    registry.schemaVersion == VisualRegistry.schemaVersion &&
++    registry.phase == VisualRegistry.phase;
++}
++
++export const VisualHost = Object.freeze({
++  initialize(host, hook, registry) {
++    const state = hook == "about3Pane" && validRegistry(registry)
++      ? diagnostic("active", "registry-ready", hook, registry)
++      : diagnostic("rejected", hook == "about3Pane" ? "invalid-registry" : "unknown-hook", hook);
++    states.set(host, state);
++    return state;
++  },
++  reject(host, code) {
++    const state = diagnostic("rejected", code);
++    states.set(host, state);
++    return state;
++  },
++  inspect(host) {
++    return states.get(host) ?? disabled;
++  },
++  cleanup(host) {
++    states.delete(host);
++    return disabled;
++  },
++});
+diff --git a/comm/mail/test/browser/folder-display/browser.toml b/comm/mail/test/browser/folder-display/browser.toml
+--- a/comm/mail/test/browser/folder-display/browser.toml
++++ b/comm/mail/test/browser/folder-display/browser.toml
+@@ -64,5 +64,3 @@
+ ["browser_folderPaneVisibility.js"]
+-
+-["browser_mindyMailShell.js"]
+-
++["browser_mindyVisualHost.js"]
+ ["browser_folderToolbar.js"]
+diff --git a/comm/mail/test/browser/folder-display/browser_mindyVisualHost.js b/comm/mail/test/browser/folder-display/browser_mindyVisualHost.js
+new file mode 100644
+--- /dev/null
++++ b/comm/mail/test/browser/folder-display/browser_mindyVisualHost.js
+@@ -0,0 +1,56 @@
++/* This Source Code Form is subject to the terms of the Mozilla Public
++ * License, v. 2.0. If a copy of the MPL was not distributed with this
++ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
++
++"use strict";
++
++var { VisualHost } = ChromeUtils.importESModule(
++  "resource:///modules/mindy/contracts/VisualHost.sys.mjs"
++);
++
++async function openHost(enabled) {
++  Services.prefs.setBoolPref("mindy.visual.enabled", enabled);
++  const opened = BrowserTestUtils.domWindowOpenedAndLoaded(
++    null,
++    win => win.document.documentElement.getAttribute("windowtype") == "mail:3pane"
++  );
++  window.openDialog("chrome://messenger/content/messenger.xhtml", "_blank", "chrome,all,dialog=no");
++  const win = await opened;
++  const host = win.document.getElementById("tabmail").currentAbout3Pane;
++  await host.hasDOMContentLoaded.promise;
++  return { host, win };
++}
++
++async function closeHost({ host, win }) {
++  const closed = BrowserTestUtils.windowClosed(win);
++  win.close();
++  await closed;
++  Assert.equal(VisualHost.inspect(host).status, "disabled", "unload cleans host state");
++}
++
++add_task(async function testVisualSwitchHostIsolation() {
++  const off = await openHost(false);
++  Assert.equal(VisualHost.inspect(off.host).status, "disabled", "off inherits startup");
++  for (const id of ["folderPane", "threadPane", "messagePane"]) {
++    Assert.ok(off.host.document.getElementById(id), `${id} inherited startup completes`);
++  }
++  Assert.ok(!off.host.document.querySelector('[data-mindy-shell], link[href*="mindy"], [class*="mindy"]'), "off has no visual claim");
++  await closeHost(off);
++
++  const on = await openHost(true);
++  const state = VisualHost.inspect(on.host);
++  Assert.equal(state.status, "active", "on initializes the registered host");
++  Assert.equal(state.registryCount, 80, "authority registry is complete");
++  Assert.equal(state.authoritySha256, "f43c61ebfc973bcb72cd77bf7b1c14e02e3a7a110a0b6741329d0291ebb4e8ce");
++  Assert.ok(!state.surfaceClaim, "Phase 1B claims no surface");
++  Assert.ok(!on.host.document.querySelector('[data-mindy-shell], link[href*="mindy"], [class*="mindy"]'), "on has no visual claim");
++
++  const unknown = {};
++  const rejected = VisualHost.initialize(unknown, "unknown", state);
++  Assert.equal(rejected.status, "rejected");
++  Assert.equal(rejected.code, "unknown-hook");
++  VisualHost.cleanup(unknown);
++  await closeHost(on);
++});
++
++registerCleanupFunction(() => Services.prefs.clearUserPref("mindy.visual.enabled"));
