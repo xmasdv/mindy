@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
-"""Generate and validate the authority-backed Phase 1A package patch."""
+"""Validate the authority-backed Phase 1A/1B package and host patches."""
 
 import hashlib, json, os, re, subprocess, sys, tempfile, zipfile
 from pathlib import Path, PurePosixPath
 
 ROOT = Path(__file__).resolve().parents[1]
-EXPECTED_SERIES = ("0002-mindy-mail-shell.patch", "0003-mindy-visual-packages.patch")
+EXPECTED_SERIES = ("0002-mindy-mail-shell.patch", "0003-mindy-visual-packages.patch", "0004-mindy-visual-host-switch.patch")
 PACKAGE_PATCH = EXPECTED_SERIES[1]
+HOST_PATCH = EXPECTED_SERIES[2]
+HOST_PATCH_SHA256 = "1187fab9d50de07cb3b852b1869994a2863fe0a1992b3535f7b298648e1f8b8d"
 REQUIRED_EDGES = {("adapters", "contracts"), ("ui", "adapters"),
                   ("ui", "theme"), ("ui", "brand"), ("test", "ui")}
 ALLOWED = {"comm/mail/moz.build", "comm/mail/mindy/moz.build",
@@ -15,6 +17,11 @@ ALLOWED = {"comm/mail/moz.build", "comm/mail/mindy/moz.build",
                "theme": ("moz.build", "ThemeOwnership.sys.mjs"), "brand": ("moz.build", "BrandOwnership.sys.mjs"),
                "ui": ("moz.build", "VisualPackage.sys.mjs"),
                "test": ("moz.build", "xpcshell.toml", "test_visual_package.js")}.items() for name in names}}
+HOST_ALLOWED = {"comm/mail/base/content/about3Pane.xhtml", "comm/mail/base/content/about3Pane.js",
+                "comm/mail/mindy/moz.build", "comm/mail/mindy/mindy.js",
+                "comm/mail/mindy/contracts/moz.build", "comm/mail/mindy/contracts/VisualHost.sys.mjs",
+                "comm/mail/test/browser/folder-display/browser.toml",
+                "comm/mail/test/browser/folder-display/browser_mindyVisualHost.js"}
 RAW_RESOURCE = "resource:///modules/mindy/"
 STATIC_IMPORT = re.compile(r'import\s*\{\s*\w+\s*\}\s*from\s*"(resource:///modules/mindy/[^"\s]+)"\s*;')
 TEST_IMPORT = re.compile(r'ChromeUtils\.importESModule\(\s*"resource:///modules/mindy/ui/VisualPackage\.sys\.mjs"\s*\)')
@@ -91,9 +98,9 @@ def header_path(raw, prefix):
     require(raw == "/dev/null" or raw.startswith(prefix), f"patch header prefix differs: {raw}")
     return None if raw == "/dev/null" else safe_relative(raw[2:]).as_posix()
 
-def added_files(patch=None):
+def added_files(patch=None, allowed=ALLOWED, with_removed=False):
     text = (patch or safe_path(f"patches/{PACKAGE_PATCH}")).read_text(encoding="utf-8")
-    files, deleted = {}, set()
+    files, removed_content, deleted = {}, {}, set()
     for block in re.split(r"(?=^diff --git )", text, flags=re.M)[1:]:
         lines = block.splitlines()
         match = re.fullmatch(r"diff --git a/(\S+) b/(\S+)", lines[0])
@@ -110,16 +117,19 @@ def added_files(patch=None):
                 and removed == ("deleted file mode 100644" in lines), "invalid add/delete headers")
         target = left if removed else right
         require(target.startswith("comm/mail/") and target not in files, f"invalid/duplicate patch target: {target}")
-        collecting = False; content = []
+        collecting = False; content = []; removed_lines = []
         for line in lines:
             collecting = collecting or line.startswith("@@")
             if collecting and line.startswith("+") and not line.startswith("+++"):
                 content.append(line[1:])
+            if collecting and line.startswith("-") and not line.startswith("---"):
+                removed_lines.append(line[1:])
         files[target] = "\n".join(content)
+        removed_content[target] = "\n".join(removed_lines)
         if removed:
             deleted.add(target)
-    require(set(files) == ALLOWED and not deleted, "Phase 1A patch target scope differs")
-    return files
+    require(set(files) == allowed and not deleted, "patch target scope differs")
+    return (files, removed_content) if with_removed else files
 
 def validate_packages(files):
     for path, expected in GRAMMAR.items():
@@ -139,6 +149,48 @@ def validate_packages(files):
         require(text.count(RAW_RESOURCE) == len(imports), f"unclassified Mindy resource: {path}")
         edges.update((source, url.removeprefix(RAW_RESOURCE).split("/", 1)[0]) for url in imports)
     require(edges == REQUIRED_EDGES, f"package import edges differ: {sorted(edges)}")
+
+def validate_host(patch=None, execute=True):
+    files, removed = added_files(patch or safe_path(f"patches/{HOST_PATCH}"), HOST_ALLOWED, True)
+    require(files["comm/mail/mindy/mindy.js"].strip() == 'pref("mindy.visual.enabled", false);', "host pref default differs")
+    require(files["comm/mail/mindy/moz.build"].strip() == 'JS_PREFERENCE_FILES += ["mindy.js"]', "host pref registration differs")
+    require(files["comm/mail/mindy/contracts/moz.build"].strip() ==
+            'EXTRA_JS_MODULES.mindy.contracts += ["VisualHost.sys.mjs", "VisualRegistry.sys.mjs"]', "host module registration differs")
+    host = files["comm/mail/base/content/about3Pane.js"]
+    require(all(item in host for item in ('getBoolPref("mindy.visual.enabled", false)', 'initialize(window, "about3Pane"',
+                                         'reject(window, "registry-unavailable")', 'mindyVisualHost?.cleanup(window)')),
+            "host startup/cleanup wiring differs")
+    require("data-mindy-shell" in removed["comm/mail/base/content/about3Pane.xhtml"] and
+            "mindyMail.css" in removed["comm/mail/base/content/about3Pane.xhtml"] and
+            "mindy" not in files["comm/mail/base/content/about3Pane.xhtml"], "inherited host restoration differs")
+    module = files["comm/mail/mindy/contracts/VisualHost.sys.mjs"]
+    require(not re.search(r"\b(?:Services|ChromeUtils|window|document)\b", module), "direct globals rejected")
+    require(all(item in module for item in ('new WeakMap()', '"unknown-hook"', 'surfaceClaim: false', 'states.delete(host)')) and
+            "surfaceClaim: true" not in module,
+            "host diagnostic contract differs")
+    browser = files["comm/mail/test/browser/folder-display/browser_mindyVisualHost.js"]
+    require(all(item in browser for item in ("openHost(false)", "openHost(true)", "registryCount, 80", "unknown-hook", "windowClosed")),
+            "browser smoke contract differs")
+    require("browser_mindyVisualHost.js" in files["comm/mail/test/browser/folder-display/browser.toml"] and
+            "browser_mindyMailShell.js" in removed["comm/mail/test/browser/folder-display/browser.toml"],
+            "browser smoke registration differs")
+    require(not any(path.endswith((".css", ".svg", ".png")) for path in files) and
+            not re.search(r"#[0-9a-fA-F]{3,8}|\b\d+(?:px|rem|ms)\b", "\n".join(files.values())),
+            "visual files/values rejected")
+    if execute:
+        with tempfile.TemporaryDirectory() as temporary:
+            source = Path(temporary) / "VisualHost.mjs"; source.write_text(module, encoding="utf-8")
+            script = f'''import {{ VisualHost }} from "{source.as_uri()}";
+const host={{}}, registry={{surfaceIds:Array(80),authoritySha256:"authority"}};
+if(VisualHost.inspect(host).status!=="disabled")throw Error("off");
+const active=VisualHost.initialize(host,"about3Pane",registry);
+if(active.status!=="active"||active.registryCount!==80||active.surfaceClaim||VisualHost.inspect(host)!==active)throw Error("on");
+const rejected=VisualHost.initialize({{}},"unknown",registry);
+if(rejected.code!=="unknown-hook")throw Error("unknown");
+if(VisualHost.initialize({{}},"about3Pane",{{surfaceIds:[]}}).code!=="invalid-registry")throw Error("registry");
+VisualHost.cleanup(host);if(VisualHost.inspect(host).status!=="disabled")throw Error("cleanup");'''
+            result = subprocess.run(["node", "--input-type=module", "--eval", script], capture_output=True, text=True)
+            require(result.returncode == 0, f"host executable contract failed: {result.stderr.strip()}")
 
 def validate_pins(authority=None, sources=None):
     authority, sources = authority or load("contracts/visual/authority.json"), sources or load("sources.lock")
@@ -162,12 +214,24 @@ def applicability():
                     (item["size"], item["sha256"]), f'fixture file differs: {item["path"]}')
             target = contained_target(item["path"], source)
             target.parent.mkdir(parents=True, exist_ok=True); target.write_bytes(data)
+        host_manifest = load("tools/tests/fixtures/0004-about3Pane-preimage.json")
+        require((host_manifest["repository"], host_manifest["revision"]) ==
+                tuple(load("sources.lock")["comm"][key] for key in ("repository", "revision")), "host preimage pin differs")
+        require((host_manifest["kind"], host_manifest["source_path"], host_manifest["target_path"]) ==
+                ("minimal_hunk_preimage", "mail/base/content/about3Pane.js", "comm/mail/base/content/about3Pane.js"), "host preimage scope differs")
+        host_preimage = safe_path(f'tools/tests/fixtures/{host_manifest["fixture"]}')
+        require(hashlib.sha256(host_preimage.read_bytes()).hexdigest() == host_manifest["sha256"], "host preimage differs")
+        host_target = contained_target(host_manifest["target_path"], source)
+        host_target.parent.mkdir(parents=True, exist_ok=True); host_target.write_bytes(host_preimage.read_bytes())
         for target in ALLOWED:
             contained_target(target, source)
-        result = subprocess.run(["git", "apply", "--check", *series()], cwd=source,
-                                capture_output=True, text=True)
-        require(result.returncode == 0, f"ordered fixture applicability failed: {result.stderr.strip()}")
-    return "PASS(exact pinned fixture, ordered 0002+0003)"
+        paths = series()
+        for reverse, selected in ((False, paths), (True, reversed(paths)), (False, paths)):
+            for path in selected:
+                command = ["git", "apply", *(["--reverse"] if reverse else []), str(path)]
+                result = subprocess.run(command, cwd=source, capture_output=True, text=True)
+                require(result.returncode == 0, f"ordered fixture apply/reverse/reapply failed: {result.stderr.strip()}")
+    return "PASS(exact pinned fixture, ordered 0002+0003+0004)"
 
 def validate():
     paths, authority = series(), load("contracts/visual/authority.json")
@@ -177,15 +241,18 @@ def validate():
             hashlib.sha256(paths[0].read_bytes()).hexdigest() == expected_0002["sha256"],
             "Phase 0 patch identity differs")
     validate_packages(added_files(paths[1]))
+    require(hashlib.sha256(paths[2].read_bytes()).hexdigest() == HOST_PATCH_SHA256,
+            "Phase 1B patch identity differs")
+    validate_host(paths[2])
 
 def main():
     try:
         validate()
         status = applicability()
     except (PackageError, KeyError, OSError, subprocess.SubprocessError) as error:
-        print(f"Phase 1A visual package validation failed: {error}", file=sys.stderr)
+        print(f"Phase 1A/1B visual package validation failed: {error}", file=sys.stderr)
         return 1
-    print("Phase 1A visual packages valid: authority registry, causal imports, roots, hook, pins, and patch order passed.")
+    print("Phase 1A/1B visual packages valid: authority registry, default-off host, cleanup, pins, and patch order passed.")
     print(f"patch applicability: {status}")
     return 0
 

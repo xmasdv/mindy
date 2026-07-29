@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "kind": "minimal_hunk_preimage",
+  "repository": "https://hg.mozilla.org/releases/comm-esr140",
+  "revision": "faf78db7dfb184002adc6b859c8ad395ff216239",
+  "source_path": "mail/base/content/about3Pane.js",
+  "target_path": "comm/mail/base/content/about3Pane.js",
+  "fixture": "0004-about3Pane-preimage.js",
+  "sha256": "5704e749cfb6953a6e39d3c7b8d2f134f7c4fd2d42a63a89cc0893e4a8dc11ac"
+}
