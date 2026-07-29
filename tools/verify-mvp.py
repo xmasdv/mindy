@@ -43,11 +43,13 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "area",
-        choices=("bootstrap", "mail", "ai", "app-update", "ai-update", "validation"),
+        choices=("bootstrap", "mail", "visual-packages", "ai", "app-update", "ai-update", "validation"),
     )
     area = parser.parse_args().area
     if area == "mail":
         return verify_mail()
+    if area == "visual-packages":
+        return subprocess.run([sys.executable, str(ROOT / "tools" / "validate-visual-packages.py")], cwd=ROOT).returncode
     if area != "bootstrap":
         print(f"{area} verification is not implemented yet", file=sys.stderr)
         return 2

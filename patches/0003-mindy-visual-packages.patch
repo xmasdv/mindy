@@ -1,0 +1,116 @@
+diff --git a/comm/mail/moz.build b/comm/mail/moz.build
+--- a/comm/mail/moz.build
++++ b/comm/mail/moz.build
+@@ -15,6 +15,7 @@ DIRS += [
+     "base",
+     "extensions",
+     "locales",
++    "mindy",
+     "modules",
+     "themes",
+ ]
+diff --git a/comm/mail/mindy/moz.build b/comm/mail/mindy/moz.build
+new file mode 100644
+--- /dev/null
++++ b/comm/mail/mindy/moz.build
+@@ -0,0 +1,2 @@
++DIRS += ["contracts", "adapters", "theme", "brand", "ui"]
++TEST_DIRS += ["test"]
+diff --git a/comm/mail/mindy/contracts/moz.build b/comm/mail/mindy/contracts/moz.build
+new file mode 100644
+--- /dev/null
++++ b/comm/mail/mindy/contracts/moz.build
+@@ -0,0 +1 @@
++EXTRA_JS_MODULES.mindy.contracts += ["VisualRegistry.sys.mjs"]
+diff --git a/comm/mail/mindy/contracts/VisualRegistry.sys.mjs b/comm/mail/mindy/contracts/VisualRegistry.sys.mjs
+new file mode 100644
+--- /dev/null
++++ b/comm/mail/mindy/contracts/VisualRegistry.sys.mjs
+@@ -0,0 +1 @@
++export const VisualRegistry = Object.freeze({"authoritySha256":"f43c61ebfc973bcb72cd77bf7b1c14e02e3a7a110a0b6741329d0291ebb4e8ce","schemaVersion":1,"phase":0,"surfaceIds":Object.freeze(["SH-01","SH-02","SH-03","SH-04","SH-05","SH-06","SH-07","AC-01","AC-02","AC-03","AC-04","AC-05","AC-06","AC-07","AC-08","MW-01","MW-02","MW-03","MW-04","MW-05","MW-06","MW-07","MW-08","MW-09","MW-10","RD-01","RD-02","RD-03","RD-04","RD-05","RD-06","CP-01","CP-02","CP-03","CP-04","CP-05","CP-06","CP-07","SR-01","SR-02","SR-03","SR-04","CA-01","CA-02","CA-03","CA-04","CA-05","CA-06","CA-07","CT-01","CT-02","CT-03","CT-04","CT-05","ST-01","ST-02","ST-03","ST-04","ST-05","ST-06","ST-07","ST-08","ST-09","SY-01","SY-02","SY-03","SY-04","SY-05","SY-06","SY-07","SY-08","SY-09","SY-10","SY-11","SF-01","SF-02","SF-03","AX-01","AX-02","AX-03"])});
+diff --git a/comm/mail/mindy/adapters/moz.build b/comm/mail/mindy/adapters/moz.build
+new file mode 100644
+--- /dev/null
++++ b/comm/mail/mindy/adapters/moz.build
+@@ -0,0 +1 @@
++EXTRA_JS_MODULES.mindy.adapters += ["VisualAuthorityAdapter.sys.mjs"]
+diff --git a/comm/mail/mindy/adapters/VisualAuthorityAdapter.sys.mjs b/comm/mail/mindy/adapters/VisualAuthorityAdapter.sys.mjs
+new file mode 100644
+--- /dev/null
++++ b/comm/mail/mindy/adapters/VisualAuthorityAdapter.sys.mjs
+@@ -0,0 +1,5 @@
++import { VisualRegistry } from "resource:///modules/mindy/contracts/VisualRegistry.sys.mjs";
++
++export const VisualAuthority = Object.freeze({
++  registry: VisualRegistry,
++});
+diff --git a/comm/mail/mindy/theme/moz.build b/comm/mail/mindy/theme/moz.build
+new file mode 100644
+--- /dev/null
++++ b/comm/mail/mindy/theme/moz.build
+@@ -0,0 +1 @@
++EXTRA_JS_MODULES.mindy.theme += ["ThemeOwnership.sys.mjs"]
+diff --git a/comm/mail/mindy/theme/ThemeOwnership.sys.mjs b/comm/mail/mindy/theme/ThemeOwnership.sys.mjs
+new file mode 100644
+--- /dev/null
++++ b/comm/mail/mindy/theme/ThemeOwnership.sys.mjs
+@@ -0,0 +1 @@
++export const ThemeOwnership = Object.freeze({ layer: "theme", visualValues: false });
+diff --git a/comm/mail/mindy/brand/moz.build b/comm/mail/mindy/brand/moz.build
+new file mode 100644
+--- /dev/null
++++ b/comm/mail/mindy/brand/moz.build
+@@ -0,0 +1 @@
++EXTRA_JS_MODULES.mindy.brand += ["BrandOwnership.sys.mjs"]
+diff --git a/comm/mail/mindy/brand/BrandOwnership.sys.mjs b/comm/mail/mindy/brand/BrandOwnership.sys.mjs
+new file mode 100644
+--- /dev/null
++++ b/comm/mail/mindy/brand/BrandOwnership.sys.mjs
+@@ -0,0 +1 @@
++export const BrandOwnership = Object.freeze({ layer: "brand", visualAssets: false });
+diff --git a/comm/mail/mindy/ui/moz.build b/comm/mail/mindy/ui/moz.build
+new file mode 100644
+--- /dev/null
++++ b/comm/mail/mindy/ui/moz.build
+@@ -0,0 +1 @@
++EXTRA_JS_MODULES.mindy.ui += ["VisualPackage.sys.mjs"]
+diff --git a/comm/mail/mindy/ui/VisualPackage.sys.mjs b/comm/mail/mindy/ui/VisualPackage.sys.mjs
+new file mode 100644
+--- /dev/null
++++ b/comm/mail/mindy/ui/VisualPackage.sys.mjs
+@@ -0,0 +1,9 @@
++import { VisualAuthority } from "resource:///modules/mindy/adapters/VisualAuthorityAdapter.sys.mjs";
++import { BrandOwnership } from "resource:///modules/mindy/brand/BrandOwnership.sys.mjs";
++import { ThemeOwnership } from "resource:///modules/mindy/theme/ThemeOwnership.sys.mjs";
++
++export const VisualPackage = Object.freeze({
++  authority: VisualAuthority,
++  brand: BrandOwnership,
++  theme: ThemeOwnership,
++});
+diff --git a/comm/mail/mindy/test/moz.build b/comm/mail/mindy/test/moz.build
+new file mode 100644
+--- /dev/null
++++ b/comm/mail/mindy/test/moz.build
+@@ -0,0 +1 @@
++XPCSHELL_TESTS_MANIFESTS += ["xpcshell.toml"]
+diff --git a/comm/mail/mindy/test/xpcshell.toml b/comm/mail/mindy/test/xpcshell.toml
+new file mode 100644
+--- /dev/null
++++ b/comm/mail/mindy/test/xpcshell.toml
+@@ -0,0 +1,2 @@
++[DEFAULT]
++["test_visual_package.js"]
+diff --git a/comm/mail/mindy/test/test_visual_package.js b/comm/mail/mindy/test/test_visual_package.js
+new file mode 100644
+--- /dev/null
++++ b/comm/mail/mindy/test/test_visual_package.js
+@@ -0,0 +1,8 @@
++add_task(async function testAuthorityPackageLoads() {
++  const { VisualPackage } = ChromeUtils.importESModule(
++    "resource:///modules/mindy/ui/VisualPackage.sys.mjs"
++  );
++  Assert.equal(VisualPackage.authority.registry.phase, 0);
++  Assert.equal(VisualPackage.authority.registry.surfaceIds.length, 80);
++  Assert.equal(new Set(VisualPackage.authority.registry.surfaceIds).size, 80);
++});
