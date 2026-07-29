@@ -8,7 +8,7 @@ ROOT = Path(__file__).resolve().parents[1]
 EXPECTED_SERIES = ("0002-mindy-mail-shell.patch", "0003-mindy-visual-packages.patch", "0004-mindy-visual-host-switch.patch")
 PACKAGE_PATCH = EXPECTED_SERIES[1]
 HOST_PATCH = EXPECTED_SERIES[2]
-HOST_PATCH_SHA256 = "1187fab9d50de07cb3b852b1869994a2863fe0a1992b3535f7b298648e1f8b8d"
+HOST_PATCH_SHA256 = "f88943bb920397924462c68646e92de511605e65bf6e7c8c1aa774530bf29256"
 REQUIRED_EDGES = {("adapters", "contracts"), ("ui", "adapters"),
                   ("ui", "theme"), ("ui", "brand"), ("test", "ui")}
 ALLOWED = {"comm/mail/moz.build", "comm/mail/mindy/moz.build",
@@ -158,14 +158,19 @@ def validate_host(patch=None, execute=True):
             'EXTRA_JS_MODULES.mindy.contracts += ["VisualHost.sys.mjs", "VisualRegistry.sys.mjs"]', "host module registration differs")
     host = files["comm/mail/base/content/about3Pane.js"]
     require(all(item in host for item in ('getBoolPref("mindy.visual.enabled", false)', 'initialize(window, "about3Pane"',
-                                         'reject(window, "registry-unavailable")', 'mindyVisualHost?.cleanup(window)')),
+                                         'contracts/VisualHost.sys.mjs', 'reject(window, "startup-error")',
+                                         '} finally {', 'mindyVisualHost?.cleanup(window)')) and
+            host.count("hasDOMContentLoaded.resolve()") == 1,
             "host startup/cleanup wiring differs")
     require("data-mindy-shell" in removed["comm/mail/base/content/about3Pane.xhtml"] and
             "mindyMail.css" in removed["comm/mail/base/content/about3Pane.xhtml"] and
             "mindy" not in files["comm/mail/base/content/about3Pane.xhtml"], "inherited host restoration differs")
     module = files["comm/mail/mindy/contracts/VisualHost.sys.mjs"]
     require(not re.search(r"\b(?:Services|ChromeUtils|window|document)\b", module), "direct globals rejected")
-    require(all(item in module for item in ('new WeakMap()', '"unknown-hook"', 'surfaceClaim: false', 'states.delete(host)')) and
+    require(all(item in module for item in ('import { VisualRegistry }', 'registry === VisualRegistry', 'new Set(ids).size == 80',
+                                           'registry.authoritySha256 == VisualRegistry.authoritySha256', 'inherited: status != "active"',
+                                           'registry.schemaVersion == VisualRegistry.schemaVersion', 'registry.phase == VisualRegistry.phase',
+                                           '"unknown-hook"', 'surfaceClaim: false', 'states.delete(host)')) and
             "surfaceClaim: true" not in module,
             "host diagnostic contract differs")
     browser = files["comm/mail/test/browser/folder-display/browser_mindyVisualHost.js"]
@@ -179,16 +184,36 @@ def validate_host(patch=None, execute=True):
             "visual files/values rejected")
     if execute:
         with tempfile.TemporaryDirectory() as temporary:
-            source = Path(temporary) / "VisualHost.mjs"; source.write_text(module, encoding="utf-8")
+            root = Path(temporary); registry_source = root / "VisualRegistry.mjs"; source = root / "VisualHost.mjs"
+            registry_source.write_text(generated_registry(), encoding="utf-8")
+            source.write_text(module.replace("resource:///modules/mindy/contracts/VisualRegistry.sys.mjs", "./VisualRegistry.mjs"), encoding="utf-8")
+            startup = re.search(r'  try \{\n.*?  \} finally \{\n    hasDOMContentLoaded\.resolve\(\);\n  \}', host, re.S)
+            require(startup is not None, "host executable startup block missing")
+            runner = root / "HostStartup.mjs"
+            runner.write_text(f'''export async function run(Services,ChromeUtils,window,console,hasDOMContentLoaded){{
+let mindyVisualHost;\n{startup.group()}\nreturn mindyVisualHost;\n}}''', encoding="utf-8")
             script = f'''import {{ VisualHost }} from "{source.as_uri()}";
-const host={{}}, registry={{surfaceIds:Array(80),authoritySha256:"authority"}};
-if(VisualHost.inspect(host).status!=="disabled")throw Error("off");
-const active=VisualHost.initialize(host,"about3Pane",registry);
-if(active.status!=="active"||active.registryCount!==80||active.surfaceClaim||VisualHost.inspect(host)!==active)throw Error("on");
-const rejected=VisualHost.initialize({{}},"unknown",registry);
-if(rejected.code!=="unknown-hook")throw Error("unknown");
-if(VisualHost.initialize({{}},"about3Pane",{{surfaceIds:[]}}).code!=="invalid-registry")throw Error("registry");
-VisualHost.cleanup(host);if(VisualHost.inspect(host).status!=="disabled")throw Error("cleanup");'''
+import {{ VisualRegistry }} from "{registry_source.as_uri()}";
+import {{ run }} from "{runner.as_uri()}";
+const pkg={{VisualPackage:{{authority:{{registry:VisualRegistry}}}}}};
+async function start(pref=false,fail="",visualHost=VisualHost){{
+ const window={{}}, resolved={{count:0}};
+ const Services={{prefs:{{getBoolPref(){{if(pref==="throw")throw Error("pref");return pref;}}}}}};
+ const ChromeUtils={{importESModule(url){{if(fail&&url.includes(fail))throw Error("missing");return url.includes("VisualHost")?{{VisualHost:visualHost}}:pkg;}}}};
+ await run(Services,ChromeUtils,window,{{error(){{}}}},{{resolve(){{resolved.count++;}}}});
+ if(resolved.count!==1)throw Error("resolve");return window;
+}}
+await start();for(const failure of ["pref","VisualHost","VisualPackage"])await start(failure==="pref"?"throw":true,failure);
+const activeHost=await start(true);const active=VisualHost.inspect(activeHost);
+if(active.status!=="active"||active.registryCount!==80||active.surfaceClaim)throw Error("on");
+const throwing={{initialize(){{throw Error("init");}},reject(){{throw Error("diagnostic");}}}};await start(true,"",throwing);
+const ids=[...VisualRegistry.surfaceIds];for(const registry of [
+ {{...VisualRegistry,surfaceIds:Array(80).fill(ids[0])}},{{...VisualRegistry,authoritySha256:"wrong"}},
+ {{...VisualRegistry,surfaceIds:ids.toReversed()}},{{...VisualRegistry,surfaceIds:ids.slice(1)}}]){{
+ const state=VisualHost.initialize({{}},"about3Pane",registry);if(!state.inherited||state.status!=="rejected"||state.code!=="invalid-registry")throw Error("registry");
+}}
+if(VisualHost.initialize({{}},"unknown",VisualRegistry).code!=="unknown-hook")throw Error("unknown");
+VisualHost.cleanup(activeHost);if(VisualHost.inspect(activeHost).status!=="disabled")throw Error("cleanup");'''
             result = subprocess.run(["node", "--input-type=module", "--eval", script], capture_output=True, text=True)
             require(result.returncode == 0, f"host executable contract failed: {result.stderr.strip()}")
 

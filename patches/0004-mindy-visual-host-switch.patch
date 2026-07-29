@@ -33,26 +33,32 @@ diff --git a/comm/mail/base/content/about3Pane.js b/comm/mail/base/content/about
  /**
   * HTML element handling the swap between message, multimessage, and browser
   * XUL views.
-@@ -210,3 +211,18 @@ window.addEventListener("DOMContentLoaded", async event => {
-+  if (Services.prefs.getBoolPref("mindy.visual.enabled", false)) {
-+    ({ VisualHost: mindyVisualHost } = await ChromeUtils.importESModule(
-+      "resource:///modules/mindy/contracts/VisualHost.sys.mjs"
-+    ));
-+    try {
+@@ -210,3 +211,23 @@ window.addEventListener("DOMContentLoaded", async event => {
++  try {
++    if (Services.prefs.getBoolPref("mindy.visual.enabled", false)) {
++      ({ VisualHost: mindyVisualHost } = await ChromeUtils.importESModule(
++        "resource:///modules/mindy/contracts/VisualHost.sys.mjs"
++      ));
 +      const { VisualPackage } = ChromeUtils.importESModule(
 +        "resource:///modules/mindy/ui/VisualPackage.sys.mjs"
 +      );
 +      mindyVisualHost.initialize(window, "about3Pane", VisualPackage.authority.registry);
-+    } catch (error) {
-+      mindyVisualHost.reject(window, "registry-unavailable");
-+      console.error("Mindy visual host initialization rejected", error);
 +    }
++  } catch (error) {
++    try {
++      mindyVisualHost?.reject(window, "startup-error");
++    } catch {}
++    try {
++      console.error("Mindy visual host startup-error", error);
++    } catch {}
++  } finally {
++    hasDOMContentLoaded.resolve();
 +  }
 +
    // Update the state of the about:3pane being fully loaded.
-   hasDOMContentLoaded.resolve();
+-  hasDOMContentLoaded.resolve();
  });
-@@ -218,4 +232,5 @@ window.addEventListener("unload", () => {
+@@ -218,4 +239,5 @@ window.addEventListener("unload", () => {
    folderPane.uninit();
    threadPane.uninit();
    threadPaneHeader.uninit();
@@ -81,25 +87,38 @@ diff --git a/comm/mail/mindy/contracts/VisualHost.sys.mjs b/comm/mail/mindy/cont
 new file mode 100644
 --- /dev/null
 +++ b/comm/mail/mindy/contracts/VisualHost.sys.mjs
-@@ -0,0 +1,36 @@
+@@ -0,0 +1,49 @@
++import { VisualRegistry } from "resource:///modules/mindy/contracts/VisualRegistry.sys.mjs";
++
 +const states = new WeakMap();
 +const disabled = Object.freeze({
 +  status: "disabled", code: "switch-off", hook: null,
++  inherited: true,
 +  registryCount: 0, authoritySha256: null, surfaceClaim: false,
 +});
 +
 +function diagnostic(status, code, hook = null, registry = null) {
 +  return Object.freeze({
 +    status, code, hook,
++    inherited: status != "active",
 +    registryCount: registry?.surfaceIds?.length ?? 0,
 +    authoritySha256: registry?.authoritySha256 ?? null,
 +    surfaceClaim: false,
 +  });
 +}
 +
++function validRegistry(registry) {
++  const ids = registry?.surfaceIds;
++  return registry === VisualRegistry &&
++    ids.length == 80 && new Set(ids).size == 80 &&
++    registry.authoritySha256 == VisualRegistry.authoritySha256 &&
++    registry.schemaVersion == VisualRegistry.schemaVersion &&
++    registry.phase == VisualRegistry.phase;
++}
++
 +export const VisualHost = Object.freeze({
 +  initialize(host, hook, registry) {
-+    const state = hook == "about3Pane" && registry?.surfaceIds?.length == 80 && registry?.authoritySha256
++    const state = hook == "about3Pane" && validRegistry(registry)
 +      ? diagnostic("active", "registry-ready", hook, registry)
 +      : diagnostic("rejected", hook == "about3Pane" ? "invalid-registry" : "unknown-hook", hook);
 +    states.set(host, state);

@@ -87,6 +87,8 @@ class VisualPackageAdversarialTests(unittest.TestCase):
             ('pref("mindy.visual.enabled", false);', 'pref("mindy.visual.enabled", true);'),
             ('getBoolPref("mindy.visual.enabled", false)', "false"),
             ('initialize(window, "about3Pane"', 'initialize(window, "unknown"'),
+            ('contracts/VisualHost.sys.mjs', 'contracts/MissingHost.sys.mjs'),
+            ('registry === VisualRegistry', "true"),
             ('states.delete(host);', "return disabled;"),
             ('states.set(host, state);', "return state;"),
             ('const states = new WeakMap();', "const states = new WeakMap(); Services.io.offline;"),
