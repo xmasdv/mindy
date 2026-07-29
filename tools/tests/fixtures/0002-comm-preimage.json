@@ -3,11 +3,12 @@
   "repository": "https://hg.mozilla.org/releases/comm-esr140",
   "revision": "faf78db7dfb184002adc6b859c8ad395ff216239",
   "archive": "0002-comm-preimage.zip",
-  "archive_sha256": "ff3dd55482ac971e68a76b62d975c95069203e2b9b939a71f762e4e71c927d72",
+  "archive_sha256": "bcc83060277ce7d7ed6e3f307b6c67adbec32e8e2bac0b8cdc21e2dbabc4953d",
   "license_headers": "preserved verbatim where present in the pinned raw files",
   "files": [
     {"path": "comm/mail/base/content/about3Pane.xhtml", "source_path": "mail/base/content/about3Pane.xhtml", "size": 37226, "sha256": "34df388ab6099786a5e0b870095389cf1b078b923a7a66001067df61ab5e1a6d"},
     {"path": "comm/mail/test/browser/folder-display/browser.toml", "source_path": "mail/test/browser/folder-display/browser.toml", "size": 3103, "sha256": "dc6f9b5fb9b2ed8c68bbcfa0b4c9f02ef238d0d0e7e06c657499fde566567950"},
-    {"path": "comm/mail/themes/shared/jar.inc.mn", "source_path": "mail/themes/shared/jar.inc.mn", "size": 79925, "sha256": "9d36e57f40e4a8f6c7a0ea2401ab40e6bd45284103c277c6c7d5686e29f17c7b"}
+    {"path": "comm/mail/themes/shared/jar.inc.mn", "source_path": "mail/themes/shared/jar.inc.mn", "size": 79925, "sha256": "9d36e57f40e4a8f6c7a0ea2401ab40e6bd45284103c277c6c7d5686e29f17c7b"},
+    {"path": "comm/mail/moz.build", "source_path": "mail/moz.build", "size": 1126, "sha256": "cbc90bd2da4b436344468d5dbfaba68a7d3e5b30eede0b6772fbcd3b8581bb39"}
   ]
 }
