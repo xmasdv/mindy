@@ -1,0 +1,187 @@
+diff --git a/comm/mail/moz.build b/comm/mail/moz.build
+--- a/comm/mail/moz.build
++++ b/comm/mail/moz.build
+@@ -11,6 +11,7 @@ CONFIGURE_SUBST_FILES += ["installer/Makefile"]
+ # app is always last as it packages up the built files on mac.
+ DIRS += [
+     "actors",
++    "../mindy",
+     "app",
+     "base",
+     "extensions",
+diff --git a/comm/mail/app/profile/all-thunderbird.js b/comm/mail/app/profile/all-thunderbird.js
+--- a/comm/mail/app/profile/all-thunderbird.js
++++ b/comm/mail/app/profile/all-thunderbird.js
+@@ -1503,5 +1503,7 @@ pref("mail.accounthub.enabled", false);
+ // Enable address book setup via account hub
+ pref("mail.accounthub.addressbook.enabled", false);
+-
++// Transitional package gate. Phase 1 preserves inherited presentation.
++pref("mindy.visual.enabled", false);
++
+ // Export to mobile logging level.
+ pref("mail.qrexport.loglevel", "Warn");
+diff --git a/comm/mail/base/content/about3Pane.js b/comm/mail/base/content/about3Pane.js
+--- a/comm/mail/base/content/about3Pane.js
++++ b/comm/mail/base/content/about3Pane.js
+@@ -36,5 +36,8 @@ var { MailServices } = ChromeUtils.importESModule(
+ var { XPCOMUtils } = ChromeUtils.importESModule(
+   "resource://gre/modules/XPCOMUtils.sys.mjs"
+ );
+-
++var { initializeMindyVisual } = ChromeUtils.importESModule(
++  "resource:///modules/mindy/ui/VisualBootstrap.sys.mjs"
++);
++
+ ChromeUtils.defineESModuleGetters(this, {
+@@ -155,6 +158,7 @@ window.addEventListener("DOMContentLoaded", async event => {
+ window.addEventListener("DOMContentLoaded", async event => {
+   if (event.target != document) {
+     return;
+   }
+-
++  initializeMindyVisual("about3Pane");
++
+   // Ensure all the necessary custom elements have been defined.
+diff --git a/comm/mindy/moz.build b/comm/mindy/moz.build
+new file mode 100644
+--- /dev/null
++++ b/comm/mindy/moz.build
+@@ -0,0 +1,14 @@
++# This Source Code Form is subject to the terms of the Mozilla Public
++# License, v. 2.0. If a copy of the MPL was not distributed with this
++# file, You can obtain one at http://mozilla.org/MPL/2.0/.
++
++FINAL_TARGET_FILES.modules.mindy.contracts += ["contracts/SurfaceRegistry.sys.mjs"]
++FINAL_TARGET_FILES.modules.mindy.adapters += ["adapters/FeatureSwitch.sys.mjs"]
++FINAL_TARGET_FILES.modules.mindy.ui += ["ui/VisualBootstrap.sys.mjs"]
++FINAL_TARGET_FILES.modules.mindy.theme += ["theme/package.json"]
++FINAL_TARGET_FILES.modules.mindy.brand += ["brand/package.json"]
++
++TEST_DIRS += ["test"]
++
++with Files("**"):
++    BUG_COMPONENT = ("Thunderbird", "General")
+diff --git a/comm/mindy/contracts/SurfaceRegistry.sys.mjs b/comm/mindy/contracts/SurfaceRegistry.sys.mjs
+new file mode 100644
+--- /dev/null
++++ b/comm/mindy/contracts/SurfaceRegistry.sys.mjs
+@@ -0,0 +1,16 @@
++/* This Source Code Form is subject to the terms of the Mozilla Public
++ * License, v. 2.0. If a copy of the MPL was not distributed with this
++ * file, you can obtain one at http://mozilla.org/MPL/2.0/. */
++
++export const SURFACE_REGISTRY_AUTHORITY =
++  "contracts/visual/surface-registry.schema.json";
++
++export function loadSurfaceRegistry(claims = []) {
++  if (!Array.isArray(claims) || claims.length) {
++    throw new Error("Phase 1 cannot claim visual surfaces");
++  }
++  return Object.freeze({
++    authority: SURFACE_REGISTRY_AUTHORITY,
++    claims: Object.freeze([]),
++  });
++}
+diff --git a/comm/mindy/adapters/FeatureSwitch.sys.mjs b/comm/mindy/adapters/FeatureSwitch.sys.mjs
+new file mode 100644
+--- /dev/null
++++ b/comm/mindy/adapters/FeatureSwitch.sys.mjs
+@@ -0,0 +1,11 @@
++/* This Source Code Form is subject to the terms of the Mozilla Public
++ * License, v. 2.0. If a copy of the MPL was not distributed with this
++ * file, you can obtain one at http://mozilla.org/MPL/2.0/. */
++
++import { Services } from "resource://gre/modules/Services.sys.mjs";
++
++const PREF = "mindy.visual.enabled";
++
++export function isMindyVisualEnabled() {
++  return Services.prefs.getBoolPref(PREF, false);
++}
+diff --git a/comm/mindy/ui/VisualBootstrap.sys.mjs b/comm/mindy/ui/VisualBootstrap.sys.mjs
+new file mode 100644
+--- /dev/null
++++ b/comm/mindy/ui/VisualBootstrap.sys.mjs
+@@ -0,0 +1,21 @@
++/* This Source Code Form is subject to the terms of the Mozilla Public
++ * License, v. 2.0. If a copy of the MPL was not distributed with this
++ * file, you can obtain one at http://mozilla.org/MPL/2.0/. */
++
++import { loadSurfaceRegistry } from "resource:///modules/mindy/contracts/SurfaceRegistry.sys.mjs";
++import { isMindyVisualEnabled } from "resource:///modules/mindy/adapters/FeatureSwitch.sys.mjs";
++
++const HOOKS = new Set(["about3Pane"]);
++
++export function initializeMindyVisual(hostId) {
++  if (!HOOKS.has(hostId)) {
++    throw new Error(`Unregistered Mindy host: ${hostId}`);
++  }
++  if (!isMindyVisualEnabled()) {
++    return Object.freeze({ mode: "inherited" });
++  }
++  return Object.freeze({
++    mode: "registry-only",
++    registry: loadSurfaceRegistry(),
++  });
++}
+diff --git a/comm/mindy/theme/package.json b/comm/mindy/theme/package.json
+new file mode 100644
+--- /dev/null
++++ b/comm/mindy/theme/package.json
+@@ -0,0 +1 @@
++{"phase":1,"kind":"boundary","values":[]}
+diff --git a/comm/mindy/brand/package.json b/comm/mindy/brand/package.json
+new file mode 100644
+--- /dev/null
++++ b/comm/mindy/brand/package.json
+@@ -0,0 +1 @@
++{"phase":1,"kind":"boundary","assets":[]}
+diff --git a/comm/mindy/test/moz.build b/comm/mindy/test/moz.build
+new file mode 100644
+--- /dev/null
++++ b/comm/mindy/test/moz.build
+@@ -0,0 +1,4 @@
++# This Source Code Form is subject to the terms of the Mozilla Public
++# License, v. 2.0. If a copy of the MPL was not distributed with this
++# file, You can obtain one at http://mozilla.org/MPL/2.0/.
++XPCSHELL_TESTS_MANIFESTS += ["xpcshell.ini"]
+diff --git a/comm/mindy/test/xpcshell.ini b/comm/mindy/test/xpcshell.ini
+new file mode 100644
+--- /dev/null
++++ b/comm/mindy/test/xpcshell.ini
+@@ -0,0 +1,2 @@
++[DEFAULT]
++[test_visual_bootstrap.js]
+diff --git a/comm/mindy/test/test_visual_bootstrap.js b/comm/mindy/test/test_visual_bootstrap.js
+new file mode 100644
+--- /dev/null
++++ b/comm/mindy/test/test_visual_bootstrap.js
+@@ -0,0 +1,27 @@
++/* This Source Code Form is subject to the terms of the Mozilla Public
++ * License, v. 2.0. If a copy of the MPL was not distributed with this
++ * file, you can obtain one at http://mozilla.org/MPL/2.0/. */
++
++const { initializeMindyVisual } = ChromeUtils.importESModule(
++  "resource:///modules/mindy/ui/VisualBootstrap.sys.mjs"
++);
++
++registerCleanupFunction(() => Services.prefs.clearUserPref("mindy.visual.enabled"));
++
++add_task(function test_inherited_default_and_empty_enabled_registry() {
++  Services.prefs.clearUserPref("mindy.visual.enabled");
++  Assert.deepEqual(initializeMindyVisual("about3Pane"), { mode: "inherited" });
++
++  Services.prefs.setBoolPref("mindy.visual.enabled", true);
++  const enabled = initializeMindyVisual("about3Pane");
++  Assert.equal(enabled.mode, "registry-only");
++  Assert.equal(enabled.registry.authority, "contracts/visual/surface-registry.schema.json");
++  Assert.deepEqual(enabled.registry.claims, []);
++});
++
++add_task(function test_unregistered_hook_fails_closed() {
++  Assert.throws(
++    () => initializeMindyVisual("unknown"),
++    /Unregistered Mindy host/
++  );
++});

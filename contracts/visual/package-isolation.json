@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "phase": 1,
+  "layers": [
+    {"name": "contracts", "path": "comm/mindy/contracts/", "dependencies": []},
+    {"name": "adapters", "path": "comm/mindy/adapters/", "dependencies": ["contracts"]},
+    {"name": "ui", "path": "comm/mindy/ui/", "dependencies": ["contracts", "adapters"]},
+    {"name": "theme", "path": "comm/mindy/theme/", "dependencies": ["contracts", "adapters", "ui"]},
+    {"name": "brand", "path": "comm/mindy/brand/", "dependencies": ["contracts", "adapters", "ui"]},
+    {"name": "test", "path": "comm/mindy/test/", "dependencies": ["contracts", "adapters", "ui", "theme", "brand"]}
+  ],
+  "surface_registry": {"authority": "contracts/visual/surface-registry.schema.json", "claims": []},
+  "hook": {
+    "id": "about3Pane",
+    "host": "comm/mail/base/content/about3Pane.js",
+    "module": "resource:///modules/mindy/ui/VisualBootstrap.sys.mjs"
+  },
+  "feature_switch": {"preference": "mindy.visual.enabled", "default": false, "off": "inherited", "on": "registry-only"},
+  "upstream": {
+    "pins": "sources.lock",
+    "patch": "patches/0003-mindy-visual-package-foundation.patch",
+    "application": "git apply --directory=vendor/gecko --check"
+  },
+  "boundaries": ["inherited-native", "inherited-external", "provider"],
+  "rollback": "remove the Phase 1 patch registration; no profile or user-data migration"
+}
