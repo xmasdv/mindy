@@ -7,21 +7,25 @@ from pathlib import Path, PurePosixPath
 ROOT = Path(__file__).resolve().parents[1]
 EXPECTED_SERIES = ("0002-mindy-mail-shell.patch", "0003-mindy-visual-packages.patch")
 PACKAGE_PATCH = EXPECTED_SERIES[1]
-ROOTS = ("contracts", "adapters", "ui", "theme", "brand", "test")
 REQUIRED_EDGES = {("adapters", "contracts"), ("ui", "adapters"),
                   ("ui", "theme"), ("ui", "brand"), ("test", "ui")}
 ALLOWED = {"comm/mail/moz.build", "comm/mail/mindy/moz.build",
            *{f"comm/mail/mindy/{root}/{name}" for root, names in {
-               "contracts": ("moz.build", "VisualRegistry.sys.mjs"),
-               "adapters": ("moz.build", "VisualAuthorityAdapter.sys.mjs"),
-               "theme": ("moz.build", "ThemeOwnership.sys.mjs"),
-               "brand": ("moz.build", "BrandOwnership.sys.mjs"),
+               "contracts": ("moz.build", "VisualRegistry.sys.mjs"), "adapters": ("moz.build", "VisualAuthorityAdapter.sys.mjs"),
+               "theme": ("moz.build", "ThemeOwnership.sys.mjs"), "brand": ("moz.build", "BrandOwnership.sys.mjs"),
                "ui": ("moz.build", "VisualPackage.sys.mjs"),
                "test": ("moz.build", "xpcshell.toml", "test_visual_package.js")}.items() for name in names}}
-RESOURCE = re.compile(r'["\']resource:///modules/mindy/([^/]+)/[^"\']+["\']')
-IMPORT = re.compile(r'(?:from\s+|import\s*(?:\(\s*)?|ChromeUtils\.importESModule\(\s*)["\']resource:///modules/mindy/([^/]+)/')
-GLOBALS = re.compile(r"\b(?:ChromeUtils|Services|MailServices|Cc|Ci|Cr)\b")
-VISUAL = re.compile(r"#[0-9a-f]{3,8}\b|\brgba?\(|\b(?:color|background|font|margin|padding)\s*:", re.I)
+RAW_RESOURCE = "resource:///modules/mindy/"
+STATIC_IMPORT = re.compile(r'import\s*\{\s*\w+\s*\}\s*from\s*"(resource:///modules/mindy/[^"\s]+)"\s*;')
+TEST_IMPORT = re.compile(r'ChromeUtils\.importESModule\(\s*"resource:///modules/mindy/ui/VisualPackage\.sys\.mjs"\s*\)')
+TOKEN = re.compile(r'"[^"\n]*"|[A-Za-z_$][\w$]*|\d+|[{}()[\],.:;=]')
+# Metadata grammar: static imports plus one exact frozen export; comments/whitespace are insignificant.
+GRAMMAR = {
+    "comm/mail/mindy/adapters/VisualAuthorityAdapter.sys.mjs": 'import { VisualRegistry } from "resource:///modules/mindy/contracts/VisualRegistry.sys.mjs"; export const VisualAuthority = Object.freeze({ registry: VisualRegistry, });',
+    "comm/mail/mindy/theme/ThemeOwnership.sys.mjs": 'export const ThemeOwnership = Object.freeze({ layer: "theme", visualValues: false });',
+    "comm/mail/mindy/brand/BrandOwnership.sys.mjs": 'export const BrandOwnership = Object.freeze({ layer: "brand", visualAssets: false });',
+    "comm/mail/mindy/ui/VisualPackage.sys.mjs": 'import { VisualAuthority } from "resource:///modules/mindy/adapters/VisualAuthorityAdapter.sys.mjs"; import { BrandOwnership } from "resource:///modules/mindy/brand/BrandOwnership.sys.mjs"; import { ThemeOwnership } from "resource:///modules/mindy/theme/ThemeOwnership.sys.mjs"; export const VisualPackage = Object.freeze({ authority: VisualAuthority, brand: BrandOwnership, theme: ThemeOwnership, });',
+}
 
 class PackageError(ValueError):
     pass
@@ -33,8 +37,7 @@ def require(condition, message):
 def safe_relative(raw):
     require(isinstance(raw, str) and raw, "path must be non-empty")
     relative = PurePosixPath(raw)
-    native = Path(raw)
-    require("\\" not in raw and not native.is_absolute() and not native.drive and
+    require("\\" not in raw and not Path(raw).is_absolute() and not Path(raw).drive and
             not relative.is_absolute() and not relative.drive and ".." not in relative.parts,
             f"unsafe path: {raw}")
     return relative
@@ -44,18 +47,14 @@ def contained_target(raw, root=ROOT):
     cursor = Path(root).resolve()
     for part in relative.parts:
         cursor /= part
-        require(not cursor.is_symlink() and
-                not getattr(os.path, "isjunction", lambda _: False)(cursor),
-                f"linked path rejected: {raw}")
+        require(not cursor.is_symlink() and not getattr(os.path, "isjunction", lambda _: False)(cursor), f"linked path rejected: {raw}")
     resolved = cursor.resolve(strict=False)
     require(Path(root).resolve() in (resolved, *resolved.parents), f"resolved path escapes repository: {raw}")
     return cursor
 
-def safe_path(raw, root=ROOT):
-    return contained_target(raw, root).resolve(strict=True)
+def safe_path(raw, root=ROOT): return contained_target(raw, root).resolve(strict=True)
 
-def load(raw):
-    return json.loads(safe_path(raw).read_text(encoding="utf-8"))
+def load(raw): return json.loads(safe_path(raw).read_text(encoding="utf-8"))
 
 def series():
     names = tuple(line.split("#", 1)[0].strip() for line in
@@ -66,8 +65,8 @@ def series():
 
 def generated_registry():
     authority = load("contracts/visual/authority.json")
-    schema = load(authority["surface_inventory"]["schema_path"])
-    ids = [item for family in schema["x-exact-families"].values() for item in family]
+    families = load(authority["surface_inventory"]["schema_path"])["x-exact-families"]
+    ids = [item for family in families.values() for item in family]
     require(len(ids) == len(set(ids)) == authority["surface_inventory"]["total"] == 80,
             "authority registry IDs differ")
     payload = {"authoritySha256": hashlib.sha256(
@@ -76,11 +75,15 @@ def generated_registry():
     body = json.dumps(payload, separators=(",", ":"))[:-1]
     return f'export const VisualRegistry = Object.freeze({body},"surfaceIds":Object.freeze({json.dumps(ids, separators=(",", ":"))})}});'
 
+def module_tokens(text):
+    code = re.sub(r"(?m)(^|\s)//.*$", r"\1", re.sub(r"/\*.*?\*/", " ", text, flags=re.S))
+    tokens = TOKEN.findall(code)
+    require("".join(tokens) == re.sub(r"\s+", "", code), "metadata module grammar rejected syntax")
+    return tokens, code
+
 def header_path(raw, prefix):
-    if raw == "/dev/null":
-        return None
-    require(raw.startswith(prefix), f"patch header prefix differs: {raw}")
-    return safe_relative(raw[2:]).as_posix()
+    require(raw == "/dev/null" or raw.startswith(prefix), f"patch header prefix differs: {raw}")
+    return None if raw == "/dev/null" else safe_relative(raw[2:]).as_posix()
 
 def added_files(patch=None):
     text = (patch or safe_path(f"patches/{PACKAGE_PATCH}")).read_text(encoding="utf-8")
@@ -112,48 +115,42 @@ def added_files(patch=None):
     require(set(files) == ALLOWED and not deleted, "Phase 1A patch target scope differs")
     return files
 
-def layer(path):
-    parts = PurePosixPath(path).parts; return "test" if "test" in parts else parts[3]
-
 def validate_packages(files):
-    hook = files.get("comm/mail/moz.build", "")
-    require(hook == '    "mindy",', "package registration hook differs")
-    top = files.get("comm/mail/mindy/moz.build", "")
-    require('DIRS += ["contracts", "adapters", "theme", "brand", "ui"]' in top and
-            'TEST_DIRS += ["test"]' in top, "package roots are unregistered")
+    require(files.get("comm/mail/moz.build") == '    "mindy",', "package registration hook differs")
+    require('DIRS += ["contracts", "adapters", "theme", "brand", "ui"]' in files.get("comm/mail/mindy/moz.build", "") and
+            'TEST_DIRS += ["test"]' in files["comm/mail/mindy/moz.build"], "package roots are unregistered")
     modules = {path: text for path, text in files.items() if path.endswith((".mjs", ".js"))}
     edges = set()
     for path, text in modules.items():
-        source = layer(path)
-        require(text.strip() and "{}" not in text, f"empty package module: {path}")
+        parts = PurePosixPath(path).parts; source = "test" if "test" in parts else parts[3]
         require(f'EXTRA_JS_MODULES.mindy.{source}' in files.get(
             f"comm/mail/mindy/{source}/moz.build", "") or source == "test",
             f"unregistered package module: {path}")
-        imports, references = IMPORT.findall(text), RESOURCE.findall(text)
-        require(imports == references and all(target in ROOTS for target in imports),
-                f"unclassified Mindy resource reference: {path}")
-        edges.update((source, target) for target in imports)
-        if source == "ui":
-            require(not GLOBALS.search(text), "owned UI imports Thunderbird globals")
+        if source == "test":
+            require(text.count(RAW_RESOURCE) == 1 and TEST_IMPORT.search(text),
+                    "unclassified Mindy test resource")
+            edges.add(("test", "ui")); continue
+        expected = generated_registry() if source == "contracts" else GRAMMAR.get(path)
+        actual, code = module_tokens(text)
+        require(expected is not None and actual == module_tokens(expected)[0],
+                f"metadata module grammar differs: {path}")
+        imports = STATIC_IMPORT.findall(code)
+        require(text.count(RAW_RESOURCE) == len(imports), f"unclassified Mindy resource: {path}")
+        edges.update((source, url.removeprefix(RAW_RESOURCE).split("/", 1)[0]) for url in imports)
     require(edges == REQUIRED_EDGES, f"package import edges differ: {sorted(edges)}")
     require('XPCSHELL_TESTS_MANIFESTS += ["xpcshell.toml"]' in
             files.get("comm/mail/mindy/test/moz.build", ""), "test root is unregistered")
-    registry = files.get("comm/mail/mindy/contracts/VisualRegistry.sys.mjs", "")
-    require(registry == generated_registry(), "runtime registry drift/duplication detected")
-    require(not VISUAL.search("\n".join(files.values())), "Phase 2 visual value/file detected")
 
 def validate_pins(authority=None, sources=None):
-    authority = authority or load("contracts/visual/authority.json")
-    sources = sources or load("sources.lock")
+    authority, sources = authority or load("contracts/visual/authority.json"), sources or load("sources.lock")
     behavior = authority["behavior_authority"]
     require((sources["gecko"]["revision"], sources["comm"]["revision"]) ==
             (behavior["gecko_revision"], behavior["comm_revision"]), "source pins differ")
 
 def applicability():
     manifest = load("tools/tests/fixtures/0002-comm-preimage.json")
-    lock = load("sources.lock")["comm"]
     require((manifest["repository"], manifest["revision"]) ==
-            (lock["repository"], lock["revision"]), "fixture source pin differs")
+            tuple(load("sources.lock")["comm"][key] for key in ("repository", "revision")), "fixture source pin differs")
     archive = safe_path(f'tools/tests/fixtures/{manifest["archive"]}')
     require(hashlib.sha256(archive.read_bytes()).hexdigest() == manifest["archive_sha256"],
             "fixture archive hash differs")
@@ -174,8 +171,7 @@ def applicability():
     return "PASS(exact pinned fixture, ordered 0002+0003)"
 
 def validate():
-    paths = series()
-    authority = load("contracts/visual/authority.json")
+    paths, authority = series(), load("contracts/visual/authority.json")
     validate_pins(authority)
     expected_0002 = authority["implementation_evidence"][0]
     require(paths[0].name == Path(expected_0002["path"]).name and

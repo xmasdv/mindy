@@ -14,22 +14,26 @@ class VisualPackageAdversarialTests(unittest.TestCase):
         with self.assertRaisesRegex(v.PackageError, message):
             v.validate_packages(files)
 
-    def test_rejects_reverse_import_and_direct_ui_global(self):
-        self.rejects(lambda f: f.__setitem__("comm/mail/mindy/theme/ThemeOwnership.sys.mjs",
-            f["comm/mail/mindy/theme/ThemeOwnership.sys.mjs"] + '\nimport "resource:///modules/mindy/ui/VisualPackage.sys.mjs";'), "import edges differ")
-        self.rejects(lambda f: f.__setitem__("comm/mail/mindy/ui/VisualPackage.sys.mjs",
-            f["comm/mail/mindy/ui/VisualPackage.sys.mjs"] + "\nServices.io.offline;"), "Thunderbird globals")
-        self.rejects(lambda f: f.__setitem__("comm/mail/mindy/theme/ThemeOwnership.sys.mjs",
-            f["comm/mail/mindy/theme/ThemeOwnership.sys.mjs"] + '\nimport("resource:///modules/mindy/ui/VisualPackage.sys.mjs");'), "import edges differ")
-
+    def test_rejects_fail_closed_module_grammar(self):
+        theme = "comm/mail/mindy/theme/ThemeOwnership.sys.mjs"
+        ui = "comm/mail/mindy/ui/VisualPackage.sys.mjs"
+        suffixes = [
+            '\nimport { VisualPackage } from "resource:///modules/mindy/ui/VisualPackage.sys.mjs";', '\nimport("resource:///modules/mindy/ui/VisualPackage.sys.mjs");',
+            '\nimport(`resource:///modules/mindy/ui/VisualPackage.sys.mjs`);', '\nconst layer = "ui"; import(`resource:///modules/mindy/${layer}/VisualPackage.sys.mjs`);',
+            '\nconst raw = "resource:///modules/mindy/ui/VisualPackage.sys.mjs";', "\ndoThing();", '\nexport const metadata = "extra";',
+            *(f'\nexport const {name} = "{value}";' for name, value in (("spacing", "8px"), ("dimension", "12px"), ("radius", "4px"), ("font", "Inter"), ("motion", "120ms"), ("color", "#fff")))]
+        for suffix in suffixes:
+            self.rejects(lambda files, value=suffix: files.__setitem__(theme, files[theme] + value), "grammar|unclassified")
+        self.rejects(lambda files: files.__setitem__(ui, files[ui] + "\nServices.io.offline;"), "grammar")
+        self.rejects(lambda files: files.__setitem__("comm/mail/mindy/contracts/VisualRegistry.sys.mjs",
+            files["comm/mail/mindy/contracts/VisualRegistry.sys.mjs"].replace('"SH-02"', '"SH-01"')), "grammar differs")
+        files = v.added_files()
+        files[theme] = "/* ownership */\n" + files[theme] + " // metadata"
+        v.validate_packages(files)
     def test_rejects_dead_root_and_unregistered_hook(self):
         self.rejects(lambda f: f.__setitem__("comm/mail/mindy/ui/VisualPackage.sys.mjs",
-            f["comm/mail/mindy/ui/VisualPackage.sys.mjs"].replace("/theme/ThemeOwnership.sys.mjs", "/brand/BrandOwnership.sys.mjs")), "import edges differ")
+            f["comm/mail/mindy/ui/VisualPackage.sys.mjs"].replace("/theme/ThemeOwnership.sys.mjs", "/brand/BrandOwnership.sys.mjs")), "grammar differs")
         self.rejects(lambda f: f.__setitem__("comm/mail/moz.build", ""), "registration hook")
-
-    def test_rejects_registry_drift_and_duplicate(self):
-        self.rejects(lambda f: f.__setitem__("comm/mail/mindy/contracts/VisualRegistry.sys.mjs",
-            f["comm/mail/mindy/contracts/VisualRegistry.sys.mjs"].replace('"SH-02"', '"SH-01"')), "registry drift")
 
     def test_rejects_unsafe_and_linked_paths(self):
         with self.assertRaisesRegex(v.PackageError, "unsafe path"):
