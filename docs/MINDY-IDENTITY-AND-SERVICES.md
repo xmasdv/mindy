@@ -49,7 +49,7 @@ Deferred work must not be implied by the development baseline or treated as a su
 
 ## Canonical artifact evidence
 
-A canonical Mindy artifact requires a recorded Git commit, source pins, patch-series hash, mozconfig hash, clean tree status, configuration identity, executable hash, and explicit evidence for every service policy it uses.
+A canonical Mindy artifact requires a recorded Git commit, source pins, patch-series hash, mozconfig hash, clean tree status, configuration identity, executable hash, and explicit evidence for every service policy it uses. The receipt [schema and template](../contracts/provenance/) are checked by `tools/validate-artifact-receipt.py`; the template is not artifact evidence.
 
 Development artifacts that lack this evidence are not release evidence. Inherited Thunderbird behavior remains subject to the boundaries in [Architecture](ARCHITECTURE.md), [Product](PRODUCT.md), [Security](SECURITY.md), [Roadmap](ROADMAP.md), and [Visual Ownership](VISUAL-OWNERSHIP.md).
 
