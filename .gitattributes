@@ -8,7 +8,9 @@
 *.yaml text eol=lf
 *.md text eol=lf
 *.json text eol=lf
-patches/*.patch text eol=lf
+patches/*.patch text eol=lf whitespace=-blank-at-eol
+patches/series text eol=lf
+tools/tests/fixtures/0004-moz.configure-preimage text eol=lf
 
 *.7z binary
 *.bz2 binary

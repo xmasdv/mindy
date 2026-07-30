@@ -5,7 +5,8 @@ import hashlib, json, os, re, subprocess, sys, tempfile, zipfile
 from pathlib import Path, PurePosixPath
 
 ROOT = Path(__file__).resolve().parents[1]
-EXPECTED_SERIES = ("0002-mindy-mail-shell.patch", "0003-mindy-visual-packages.patch")
+EXPECTED_SERIES = ("0002-mindy-mail-shell.patch", "0003-mindy-visual-packages.patch",
+                   "0004-mindy-identity-namespace.patch")
 PACKAGE_PATCH = EXPECTED_SERIES[1]
 REQUIRED_EDGES = {("adapters", "contracts"), ("ui", "adapters"),
                   ("ui", "theme"), ("ui", "brand"), ("test", "ui")}
@@ -62,9 +63,9 @@ def safe_path(raw, root=ROOT): return contained_target(raw, root).resolve(strict
 
 def load(raw): return json.loads(safe_path(raw).read_text(encoding="utf-8"))
 
-def series():
+def series(text=None):
     names = tuple(line.split("#", 1)[0].strip() for line in
-                  safe_path("patches/series").read_text().splitlines()
+                  (safe_path("patches/series").read_text() if text is None else text).splitlines()
                   if line.split("#", 1)[0].strip())
     require(names == EXPECTED_SERIES, "patch series identity/order differs")
     return [safe_path(f"patches/{name}") for name in names]
@@ -164,7 +165,7 @@ def applicability():
             target.parent.mkdir(parents=True, exist_ok=True); target.write_bytes(data)
         for target in ALLOWED:
             contained_target(target, source)
-        result = subprocess.run(["git", "apply", "--check", *series()], cwd=source,
+        result = subprocess.run(["git", "apply", "--check", *series()[:2]], cwd=source,
                                 capture_output=True, text=True)
         require(result.returncode == 0, f"ordered fixture applicability failed: {result.stderr.strip()}")
     return "PASS(exact pinned fixture, ordered 0002+0003)"

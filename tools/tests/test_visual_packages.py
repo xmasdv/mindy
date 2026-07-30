@@ -73,6 +73,11 @@ class VisualPackageAdversarialTests(unittest.TestCase):
         with mock.patch.object(v, "EXPECTED_SERIES", tuple(reversed(v.EXPECTED_SERIES))):
             with self.assertRaisesRegex(v.PackageError, "identity/order"):
                 v.series()
+        canonical = "\n".join(v.EXPECTED_SERIES)
+        for mutated in (canonical + "\n0004-missing.patch", canonical.rsplit("\n", 1)[0],
+                        canonical + "\n" + v.EXPECTED_SERIES[-1]):
+            with self.subTest(series=mutated), self.assertRaisesRegex(v.PackageError, "identity/order"):
+                v.series(mutated)
         sources = v.load("sources.lock"); sources["comm"]["revision"] = "0" * 40
         with self.assertRaisesRegex(v.PackageError, "source pins differ"):
             v.validate_pins(sources=sources)
