@@ -9,6 +9,7 @@ ROOT = Path(__file__).resolve().parents[1]
 HEX, REV = re.compile(r"^[a-f0-9]{64}$"), re.compile(r"^[a-f0-9]{40}$")
 IDENTITY = {"app": "Mindy", "product": "Mindy", "profile": "mindy", "remoting": "mindy", "vendor": "Mindy Project", "channel": "development", "branding": "mindy", "updater": "disabled", "lto": "disabled"}
 CLAIMS = {"clean-source", "no-owned-service-endpoints", "lto-disabled"}
+PENDING_CODES = {"runtime_validation_pending", "provider_validation_pending", "native_validation_pending", "release_policy_pending", "artifact_not_release"}
 POLICY = "docs/MINDY-IDENTITY-AND-SERVICES.md"
 REMOTE = "https://github.com/xmasdv/mindy.git"
 
@@ -62,13 +63,18 @@ def evidence_records(records, repository, artifact):
     require(isinstance(records, list) and records, "verification records are incomplete")
     for record in records:
         output = record.get("output", {})
-        require(set(record) == {"command", "expected", "output"} and isinstance(record["command"], list) and record["command"] and all(isinstance(value, str) and value.strip() for value in record["command"]) and record["expected"] in {"pass", "fail", "unavailable"} and set(output) == {"scope", "path", "sha256"} and output["scope"] in {"repository", "artifact"} and HEX.fullmatch(output["sha256"]) and output["sha256"] != "0" * 64, "verification records are incomplete")
+        require(set(record) == {"command", "command_id", "expected", "output"} and isinstance(record["command"], list) and record["command"] and all(isinstance(value, str) and value.strip() for value in record["command"]) and isinstance(record["command_id"], str) and record["command_id"].strip() and record["expected"] == "pass" and set(output) == {"scope", "path", "sha256"} and output["scope"] in {"repository", "artifact"} and HEX.fullmatch(output["sha256"]) and output["sha256"] != "0" * 64, "verification records are incomplete")
         root = repository if output["scope"] == "repository" else artifact
-        require(root is not None and sha(safe_path(root, output["path"])) == output["sha256"], "verification output evidence differs")
+        require(root is not None, "verification output evidence differs")
+        path = safe_path(root, output["path"])
+        require(sha(path) == output["sha256"], "verification output evidence differs")
+        try: envelope = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as error: raise ReceiptError("verification output is malformed") from error
+        require(envelope == {"schema_version": 1, "result": "pass", "command": record["command_id"], "exit_code": 0}, "verification outcome differs")
 
 def status_records(records):
-    require(isinstance(records, list) and records and all(set(item) == {"status", "code", "detail"} and item["status"] in {"pending", "unknown", "deferred", "not_applicable"} and re.fullmatch(r"[a-z][a-z0-9-]{2,63}", item["code"]) and item["detail"].strip().lower() not in {"none", "all facts known"} for item in records), "unknowns or limitations are invalid")
-    return any(item["status"] in {"pending", "unknown"} for item in records)
+    require(isinstance(records, list) and records and all(set(item) == {"status", "code", "detail"} and item["status"] in {"pending", "unknown"} and item["code"] in PENDING_CODES and isinstance(item["detail"], str) and len(item["detail"].strip()) >= 12 and not re.search(r"\b(complete(?:d)?|proven|accepted|all facts known|none)\b", item["detail"], re.I) for item in records), "unknowns or limitations are invalid")
+    return True
 
 def validate(receipt, root=ROOT, artifact_root=None, state=None, accept_historical=False, fixture=False):
     required = {"schema_version", "classification", "git", "source_pins", "patches", "build", "configuration", "artifact", "service_policy", "verification", "unknowns", "limitations", "claims", "approval"}

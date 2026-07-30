@@ -8,9 +8,9 @@
   "configuration": {"app": "Mindy", "product": "Mindy", "profile": "mindy", "remoting": "mindy", "vendor": "Mindy Project", "channel": "development", "branding": "mindy", "updater": "disabled", "lto": "disabled"},
   "artifact": {"path": "REPLACE/mindy.exe", "sha256": "REPLACE", "size": 0, "timestamp": "REPLACE", "version": "REPLACE", "manifest": {"path": "REPLACE/application.ini", "sha256": "REPLACE"}, "configuration": {"path": "REPLACE/mindy-config.json", "sha256": "REPLACE"}},
   "service_policy": {"issue": 27, "path": "docs/MINDY-IDENTITY-AND-SERVICES.md", "sha256": "REPLACE", "endpoints": []},
-  "verification": [{"command": ["REPLACE"], "expected": "pass", "output": {"scope": "artifact", "path": "REPLACE/verification.txt", "sha256": "REPLACE"}}],
-  "unknowns": [{"status": "unknown", "code": "canonical-artifact", "detail": "No clean canonical artifact exists."}],
-  "limitations": [{"status": "pending", "code": "independent-review", "detail": "Template only; independent review remains pending."}],
+  "verification": [{"command": ["REPLACE"], "command_id": "REPLACE", "expected": "pass", "output": {"scope": "artifact", "path": "REPLACE/verification.json", "sha256": "REPLACE"}}],
+  "unknowns": [{"status": "unknown", "code": "artifact_not_release", "detail": "A clean canonical development artifact is still pending."}],
+  "limitations": [{"status": "pending", "code": "runtime_validation_pending", "detail": "Runtime validation is pending for the development baseline."}],
   "claims": ["clean-source", "no-owned-service-endpoints", "lto-disabled"],
   "approval": {"status": "pending-independent-review", "reviewer": null}
 }

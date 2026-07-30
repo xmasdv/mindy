@@ -21,14 +21,14 @@ class ArtifactReceiptTests(unittest.TestCase):
     def tearDown(self): self.temp.cleanup()
 
     def write_output(self):
-        for path, data in {"dist/mindy.exe": b"binary", "dist/application.ini": b"[App]\nName=Mindy\nVersion=0\n", "dist/mindy-config.json": json.dumps({"identity": v.IDENTITY, "version": "0"}).encode(), "verification/unit.txt": b"result=pass\n"}.items():
+        for path, data in {"dist/mindy.exe": b"binary", "dist/application.ini": b"[App]\nName=Mindy\nVersion=0\n", "dist/mindy-config.json": json.dumps({"identity": v.IDENTITY, "version": "0"}).encode(), "verification/unit.json": json.dumps({"schema_version": 1, "result": "pass", "command": "receipt-tests", "exit_code": 0}).encode()}.items():
             target = self.artifacts / path; target.parent.mkdir(parents=True, exist_ok=True); target.write_bytes(data)
 
     def receipt(self, classification="synthetic"):
         patch = self.root / "patches/one.patch"; binary = self.artifacts / "dist/mindy.exe"; ini = self.artifacts / "dist/application.ini"; config = self.artifacts / "dist/mindy-config.json"
         entries = [{"path": "one.patch", "sha256": v.sha(patch)}]
-        output = self.artifacts / "verification/unit.txt"
-        return {"schema_version": 1, "classification": classification, "git": {"commit": "d" * 40, "integration": {"remote": "origin", "url": v.REMOTE, "branch": "feat/mindy-desktop-mvp", "commit": "e" * 40}}, "source_pins": {"lock_path": "sources.lock", "clean_status": v.clean_records(self.state), "gecko": {"repository": "https://g", "revision": self.gecko}, "comm": {"repository": "https://c", "revision": self.comm}}, "patches": {"series_path": "patches/series", "canonical_sha256": v.canonical_series(entries), "entries": entries}, "build": {"mozconfig_path": "config/mozconfig-pilot", "mozconfig_sha256": v.sha(self.root / "config/mozconfig-pilot"), "command": ["mach", "build"], "environment": {"os": "Windows", "architecture": "x64", "mozconfig": "config/mozconfig-pilot"}}, "configuration": dict(v.IDENTITY), "artifact": {"path": "dist/mindy.exe", "sha256": v.sha(binary), "size": binary.stat().st_size, "timestamp": datetime.fromtimestamp(binary.stat().st_mtime, timezone.utc).isoformat().replace("+00:00", "Z"), "version": "0", "manifest": {"path": "dist/application.ini", "sha256": v.sha(ini)}, "configuration": {"path": "dist/mindy-config.json", "sha256": v.sha(config)}}, "service_policy": {"issue": 27, "path": v.POLICY, "sha256": v.sha(self.root / v.POLICY), "endpoints": []}, "verification": [{"command": ["python", "-m", "unittest"], "expected": "pass", "output": {"scope": "artifact", "path": "verification/unit.txt", "sha256": v.sha(output)}}], "unknowns": [{"status": "unknown", "code": "canonical-artifact", "detail": "No clean artifact exists."}], "limitations": [{"status": "pending", "code": "independent-review", "detail": "Synthetic fixture."}], "claims": sorted(v.CLAIMS), "approval": {"status": "pending-independent-review", "reviewer": None}}
+        output = self.artifacts / "verification/unit.json"
+        return {"schema_version": 1, "classification": classification, "git": {"commit": "d" * 40, "integration": {"remote": "origin", "url": v.REMOTE, "branch": "feat/mindy-desktop-mvp", "commit": "e" * 40}}, "source_pins": {"lock_path": "sources.lock", "clean_status": v.clean_records(self.state), "gecko": {"repository": "https://g", "revision": self.gecko}, "comm": {"repository": "https://c", "revision": self.comm}}, "patches": {"series_path": "patches/series", "canonical_sha256": v.canonical_series(entries), "entries": entries}, "build": {"mozconfig_path": "config/mozconfig-pilot", "mozconfig_sha256": v.sha(self.root / "config/mozconfig-pilot"), "command": ["mach", "build"], "environment": {"os": "Windows", "architecture": "x64", "mozconfig": "config/mozconfig-pilot"}}, "configuration": dict(v.IDENTITY), "artifact": {"path": "dist/mindy.exe", "sha256": v.sha(binary), "size": binary.stat().st_size, "timestamp": datetime.fromtimestamp(binary.stat().st_mtime, timezone.utc).isoformat().replace("+00:00", "Z"), "version": "0", "manifest": {"path": "dist/application.ini", "sha256": v.sha(ini)}, "configuration": {"path": "dist/mindy-config.json", "sha256": v.sha(config)}}, "service_policy": {"issue": 27, "path": v.POLICY, "sha256": v.sha(self.root / v.POLICY), "endpoints": []}, "verification": [{"command": ["python", "-m", "unittest"], "command_id": "receipt-tests", "expected": "pass", "output": {"scope": "artifact", "path": "verification/unit.json", "sha256": v.sha(output)}}], "unknowns": [{"status": "unknown", "code": "artifact_not_release", "detail": "A clean canonical development artifact is pending."}], "limitations": [{"status": "pending", "code": "runtime_validation_pending", "detail": "Runtime validation remains pending for this fixture."}], "claims": sorted(v.CLAIMS), "approval": {"status": "pending-independent-review", "reviewer": None}}
 
     def check(self, receipt=None): return v.validate(receipt or self.receipt(), self.root, self.artifacts, self.state, accept_historical=True, fixture=True)
 
@@ -97,9 +97,20 @@ class ArtifactReceiptTests(unittest.TestCase):
         with self.assertRaisesRegex(v.ReceiptError, "output evidence"): self.check(receipt)
         receipt = self.receipt(); receipt["verification"][0]["expected"] = "unverified assertion"
         with self.assertRaisesRegex(v.ReceiptError, "verification records"): self.check(receipt)
+        output = self.artifacts / "verification/unit.json"
+        for result in ("fail", "unavailable"):
+            output.write_text(json.dumps({"schema_version": 1, "result": result, "command": "receipt-tests", "exit_code": 1}), encoding="utf-8")
+            with self.assertRaisesRegex(v.ReceiptError, "verification outcome"): self.check(self.receipt())
+        output.write_text("{", encoding="utf-8")
+        with self.assertRaisesRegex(v.ReceiptError, "verification output is malformed"): self.check(self.receipt())
+        output.write_text(json.dumps({"schema_version": 1, "result": "pass", "command": "other", "exit_code": 0}), encoding="utf-8")
+        with self.assertRaisesRegex(v.ReceiptError, "verification outcome"): self.check(self.receipt())
+        self.write_output()
         receipt = self.receipt(); receipt["unknowns"] = []
         with self.assertRaisesRegex(v.ReceiptError, "unknowns"): self.check(receipt)
-        receipt = self.receipt(); receipt["limitations"][0]["detail"] = "all facts known"
+        receipt = self.receipt(); receipt["unknowns"][0]["code"] = "invented_pending"
+        with self.assertRaisesRegex(v.ReceiptError, "unknowns or limitations"): self.check(receipt)
+        receipt = self.receipt(); receipt["limitations"][0]["detail"] = "Runtime validation completed and accepted."
         with self.assertRaisesRegex(v.ReceiptError, "unknowns or limitations"): self.check(receipt)
         receipt = self.receipt(); receipt["claims"].append("supported-release")
         with self.assertRaisesRegex(v.ReceiptError, "identity or claims"): self.check(receipt)
