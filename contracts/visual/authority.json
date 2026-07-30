@@ -1,13 +1,14 @@
 {
   "schema_version": 1,
   "phase": 0,
+  "phase_1a_frozen_authority_sha256": "f43c61ebfc973bcb72cd77bf7b1c14e02e3a7a110a0b6741329d0291ebb4e8ce",
   "visual_authority": [
     {"path": "DESIGN.md", "sha256": "676d370b88cd75dd32a6e6bf77a79c2761e80fdcaf9e35df41186ee709451643"},
     {"path": "docs/VISUAL-AUDIT.md", "sha256": "b92ab9bea67eee9f92333a07fa08bc980c9f42f8dfa65818040daf3c5f99797c"},
     {"path": "docs/VISUAL-OWNERSHIP.md", "sha256": "da9199a005df2d980ed48c16fd21b90b532080809bd05d4235150aee4a9db2f1"},
     {"path": "docs/VISUAL-RECONSTRUCTION-PLAN.md", "sha256": "dea08e0899b118ed29a36b60fc0dfb6da9b289fedca2ca374eba1e0609f42b1b"},
     {"path": "assets/design-concepts/mindy-inbox-mockup-v2-navy-teal.png", "sha256": "8d1ee3ddde70e44a6b7e88452f8f59af602039feceb55f95efad07b9aa89cb52"},
-    {"path": "assets/brand-production/mindy-mark.svg", "sha256": "2ce3df5793008a74ff2cb2987afe1cfe1e2f2770aa409b542472b3d72a2c5496"}
+    {"path": "assets/brand-production/mindy-mark.svg", "sha256": "9e93b8f2076e603110ecb61d099e3da1ec85fba7695857e823f7eb793a288935"}
   ],
   "behavior_authority": {
     "path": "sources.lock",

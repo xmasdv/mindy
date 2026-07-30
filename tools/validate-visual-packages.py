@@ -76,8 +76,7 @@ def generated_registry():
     ids = [item for family in families.values() for item in family]
     require(len(ids) == len(set(ids)) == authority["surface_inventory"]["total"] == 80,
             "authority registry IDs differ")
-    payload = {"authoritySha256": hashlib.sha256(
-        safe_path("contracts/visual/authority.json").read_bytes()).hexdigest(),
+    payload = {"authoritySha256": authority["phase_1a_frozen_authority_sha256"],
         "schemaVersion": authority["schema_version"], "phase": authority["phase"]}
     body = json.dumps(payload, separators=(",", ":"))[:-1]
     return f'export const VisualRegistry = Object.freeze({body},"surfaceIds":Object.freeze({json.dumps(ids, separators=(",", ":"))})}});'

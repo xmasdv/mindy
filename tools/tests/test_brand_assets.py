@@ -82,6 +82,21 @@ class BrandAssetTests(unittest.TestCase):
         finally:
             (OUTPUT / "default16.png").write_bytes(original)
 
+    def test_generator_rejects_noncanonical_master_eols(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            isolated = Path(temporary) / "brand-production"
+            shutil.copytree(ASSETS, isolated)
+            master, original = isolated / "mindy-mark.svg", (isolated / "mindy-mark.svg").read_bytes()
+            old_root, old_assets, old_output = brand.ROOT, brand.ASSET_ROOT, brand.OUTPUT
+            brand.ROOT, brand.ASSET_ROOT, brand.OUTPUT = isolated.parent, isolated, isolated / "generated"
+            try:
+                for mutated in (original.replace(b"\n", b"\r\n"), original.replace(b"\n", b"\r\n", 1)):
+                    master.write_bytes(mutated)
+                    with self.assertRaisesRegex(ValueError, "generated assets differ"):
+                        brand.generate(check=True)
+            finally:
+                brand.ROOT, brand.ASSET_ROOT, brand.OUTPUT = old_root, old_assets, old_output
+
     def test_master_geometry_and_style_causally_change_every_raster_family(self):
         for before, after in (("stroke-width=\"36\"", "stroke-width=\"42\""), ("#0EA5A4", "#14B8A6"), ("M96 336", "M104 336")):
             with self.subTest(change=before), tempfile.TemporaryDirectory() as temporary:
