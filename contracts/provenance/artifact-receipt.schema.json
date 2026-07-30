@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Mindy artifact provenance receipt",
   "type": "object",
-  "required": ["schema_version", "classification", "git", "source_pins", "patches", "build", "configuration", "artifact", "service_policy", "verification", "limitations", "claims", "approval"],
+  "required": ["schema_version", "classification", "git", "source_pins", "patches", "build", "configuration", "artifact", "service_policy", "verification", "unknowns", "limitations", "claims", "approval"],
   "properties": {
     "schema_version": {"const": 1},
     "classification": {"enum": ["canonical", "historical", "synthetic", "template"]},
@@ -11,9 +11,10 @@
     "patches": {"type": "object", "required": ["series_path", "canonical_sha256", "entries"]},
     "build": {"type": "object", "required": ["mozconfig_path", "mozconfig_sha256", "command", "environment"]},
     "configuration": {"type": "object", "required": ["app", "product", "profile", "vendor", "channel", "branding", "updater", "lto"]},
-    "artifact": {"type": "object", "required": ["path", "sha256", "size", "timestamp", "version", "manifest"]},
+    "artifact": {"type": "object", "required": ["path", "sha256", "size", "timestamp", "version", "manifest", "configuration"]},
     "service_policy": {"type": "object", "required": ["issue", "path", "sha256", "endpoints"]},
     "verification": {"type": "array", "minItems": 1},
+    "unknowns": {"type": "array", "minItems": 1},
     "limitations": {"type": "array", "minItems": 1},
     "claims": {"type": "array", "minItems": 1},
     "approval": {"type": "object", "required": ["status", "reviewer"]}

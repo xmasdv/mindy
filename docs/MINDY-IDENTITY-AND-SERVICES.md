@@ -18,6 +18,7 @@ This is a policy document, not an implementation, legal, publishing, signing, su
 - `Mindy Project` is a development vendor string only. It is not a legal publisher, trademark assertion, signing identity, support organization, or release owner.
 - The development namespace uses a separate Mindy application name, basename, profile, remoting name, and Windows product identity.
 - Thunderbird's application GUID is a **temporary compatibility exception** for inherited add-on compatibility. It is not a Mindy identity decision.
+- Receipt validation uses development-only values `Mindy`, profile/remoting `mindy`, vendor `Mindy Project`, channel `development`, branding `mindy`, and disabled updater/LTO. They are not supported-release claims.
 
 Before a supported distribution changes or retains the Thunderbird application GUID, an approved release work unit must explicitly establish:
 

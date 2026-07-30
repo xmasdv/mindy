@@ -1,12 +1,16 @@
 #!/usr/bin/env python3
 """Fail-closed validation for Mindy artifact provenance receipts."""
-import argparse, hashlib, json, os, re, subprocess, sys
-from pathlib import Path, PurePosixPath
+import argparse, configparser, hashlib, json, os, re, subprocess, sys
+from datetime import datetime, timezone
+from pathlib import Path
+from urllib.parse import urlsplit
 
 ROOT = Path(__file__).resolve().parents[1]
 HEX, REV = re.compile(r"^[a-f0-9]{64}$"), re.compile(r"^[a-f0-9]{40}$")
-IDENTITY = {"app", "product", "profile", "vendor", "channel", "branding", "updater", "lto"}
+IDENTITY = {"app": "Mindy", "product": "Mindy", "profile": "mindy", "remoting": "mindy", "vendor": "Mindy Project", "channel": "development", "branding": "mindy", "updater": "disabled", "lto": "disabled"}
 CLAIMS = {"clean-source", "no-owned-service-endpoints", "lto-disabled"}
+POLICY = "docs/MINDY-IDENTITY-AND-SERVICES.md"
+REMOTE = "https://github.com/xmasdv/mindy.git"
 
 class ReceiptError(ValueError): pass
 
@@ -14,74 +18,102 @@ def require(condition, message):
     if not condition: raise ReceiptError(message)
 
 def sha(path): return hashlib.sha256(path.read_bytes()).hexdigest()
+def text_sha(value): return hashlib.sha256(value.encode()).hexdigest()
+def linked(path): return path.is_symlink() or getattr(os.path, "isjunction", lambda _: False)(path)
 
-def linked(path):
-    return path.is_symlink() or getattr(os.path, "isjunction", lambda _: False)(path)
-
-def safe_file(root, raw):
+def safe_path(root, raw, required=True):
     require(isinstance(raw, str) and raw, "path is missing")
-    value = PurePosixPath(raw)
-    require(not value.is_absolute() and ".." not in value.parts and not Path(raw).drive, f"unsafe path: {raw}")
-    path = Path(root)
-    for part in value.parts:
+    require(not raw.startswith(("/", "\\")) and not re.match(r"^[A-Za-z]:", raw), f"unsafe path: {raw}")
+    parts = re.split(r"[\\/]", raw)
+    require(all(part not in ("", ".", "..") for part in parts), f"unsafe path: {raw}")
+    base = Path(root).resolve(strict=True)
+    require(not linked(base), f"linked root rejected: {root}")
+    path = base
+    for part in parts:
         path /= part
         require(not linked(path), f"linked path rejected: {raw}")
-    require(path.is_file(), f"missing evidence: {raw}")
-    return path
+    resolved = path.resolve(strict=False)
+    require(resolved == base or base in resolved.parents, f"resolved path escapes root: {raw}")
+    require(not required or resolved.is_file(), f"missing evidence: {raw}")
+    return resolved
 
 def canonical_series(entries):
-    return hashlib.sha256("".join(f"{item['path']}\0{item['sha256']}\n" for item in entries).encode()).hexdigest()
+    return text_sha("".join(f"{item['path']}\0{item['sha256']}\n" for item in entries))
+
+def command(*args, cwd):
+    return subprocess.check_output(args, cwd=cwd, text=True).strip()
 
 def repository_state(root):
-    def git(*args): return subprocess.check_output(["git", *args], cwd=root, text=True).strip()
-    return {"head": git("rev-parse", "HEAD"), "status": git("status", "--porcelain"), "base": git("rev-parse", "origin/feat/mindy-desktop-mvp")}
+    def hg(path):
+        status = command("hg", "-R", str(path), "status", "-mard", cwd=root)
+        return {"revision": command("hg", "-R", str(path), "log", "-r", ".", "-T", "{node}", cwd=root), "status_sha256": text_sha(status)}
+    head = command("git", "rev-parse", "HEAD", cwd=root)
+    base = command("git", "rev-parse", "origin/feat/mindy-desktop-mvp", cwd=root)
+    ancestor = subprocess.run(["git", "merge-base", "--is-ancestor", base, head], cwd=root).returncode == 0
+    status = command("git", "status", "--porcelain", cwd=root)
+    return {"head": head, "remote": command("git", "remote", "get-url", "origin", cwd=root), "base": base, "ancestor": ancestor, "clean": text_sha(status), "sources": {"gecko": hg(root / "vendor/gecko"), "comm": hg(root / "vendor/gecko/comm")}}
 
-def validate(receipt, root=ROOT, artifact_root=None, state=None, accept_historical=False):
-    required = {"schema_version", "classification", "git", "source_pins", "patches", "build", "configuration", "artifact", "service_policy", "verification", "limitations", "claims", "approval"}
+def clean_records(state):
+    return {"repository": {"command": "git status --porcelain", "result": "clean", "output_sha256": state["clean"]}, **{name: {"command": "hg status -mard", "result": "clean", "output_sha256": item["status_sha256"]} for name, item in state["sources"].items()}}
+
+def validate(receipt, root=ROOT, artifact_root=None, state=None, accept_historical=False, fixture=False):
+    required = {"schema_version", "classification", "git", "source_pins", "patches", "build", "configuration", "artifact", "service_policy", "verification", "unknowns", "limitations", "claims", "approval"}
     require(set(receipt) == required and receipt["schema_version"] == 1, "receipt schema is incomplete")
     classification = receipt["classification"]
     require(classification in {"canonical", "historical", "synthetic"}, "unsupported receipt classification")
     require(classification == "canonical" or accept_historical, "historical evidence cannot satisfy canonical acceptance")
-    git = receipt["git"]; integration = git.get("integration", {})
-    require(REV.fullmatch(git.get("commit", "")) and integration == {"remote": "origin", "branch": "feat/mindy-desktop-mvp", "commit": integration.get("commit")}, "Git integration identity is incomplete")
-    require(REV.fullmatch(integration["commit"]), "integration base is incomplete")
-    state = repository_state(root) if state is None else state
-    require(state == {"head": git["commit"], "status": "", "base": integration["commit"]}, "Git commit, base, or clean source status differs")
-    pins = receipt["source_pins"]; lock = json.loads(safe_file(root, pins.get("lock_path")).read_text(encoding="utf-8"))
-    require(pins.get("clean_status") == {"repository": "clean", "gecko": "clean", "comm": "clean"}, "source status is dirty or incomplete")
-    require(all(isinstance(pins.get(key), dict) and pins[key].get("repository", "").startswith("https://") and REV.fullmatch(pins[key].get("revision", "")) for key in ("gecko", "comm")), "source pins are incomplete")
-    require({key: pins.get(key) for key in ("gecko", "comm")} == {key: lock.get(key) for key in ("gecko", "comm")}, "source pins differ from sources.lock")
-    patches = receipt["patches"]; series = safe_file(root, patches.get("series_path"))
-    require(b"\r" not in series.read_bytes(), "patch series is not canonical LF")
-    names = [line.split("#", 1)[0].strip() for line in series.read_text(encoding="utf-8").splitlines()]; names = [name for name in names if name]
+    require(classification != "canonical" or artifact_root, "canonical receipt requires verified artifact root")
+    require(state is None or fixture, "fixture state requires explicit test mode")
+    git, integration = receipt["git"], receipt["git"].get("integration", {})
+    expected_integration = {"remote": "origin", "url": REMOTE, "branch": "feat/mindy-desktop-mvp", "commit": integration.get("commit")}
+    require(REV.fullmatch(git.get("commit", "")) and integration == expected_integration and REV.fullmatch(integration["commit"]), "Git integration identity is incomplete")
+    pins = receipt["source_pins"]; lock = json.loads(safe_path(root, pins.get("lock_path")).read_text(encoding="utf-8"))
+    require(all(isinstance(pins.get(name), dict) and pins[name].get("repository", "").startswith("https://") and REV.fullmatch(pins[name].get("revision", "")) for name in ("gecko", "comm")), "source pins are incomplete")
+    require({name: pins.get(name) for name in ("gecko", "comm")} == {name: lock.get(name) for name in ("gecko", "comm")}, "source pins differ from sources.lock")
+    if state is None: state = repository_state(root)
+    require(state["head"] == git["commit"] and state["remote"] == REMOTE and state["base"] == integration["commit"] and state["ancestor"], "Git remote, commit, or base ancestry differs")
+    require(pins.get("clean_status") == clean_records(state), "clean Git or source status evidence differs")
+    require(all(state["sources"][name]["revision"] == pins[name]["revision"] for name in ("gecko", "comm")), "external source pins differ")
+    patches = receipt["patches"]
+    require(patches.get("series_path") == "patches/series", "alternate patch series rejected")
+    series = safe_path(root, "patches/series"); data = series.read_bytes()
+    require(b"\r" not in data, "patch series is not canonical LF")
+    names = [line.split("#", 1)[0].strip() for line in data.decode("utf-8").splitlines()]; names = [name for name in names if name]
     entries = patches.get("entries")
-    require(isinstance(entries, list) and names == [item.get("path") for item in entries], "patch series entries differ")
+    require(names and isinstance(entries, list) and names == [item.get("path") for item in entries], "patch series entries differ")
     for item in entries:
-        path = safe_file(root, f"patches/{item.get('path', '')}"); data = path.read_bytes()
-        require(path.suffix == ".patch" and b"\r" not in data and item.get("sha256") == sha(path), "patch bytes are noncanonical or mismatched")
+        path = safe_path(root, f"patches/{item.get('path', '')}")
+        require(path.suffix == ".patch" and b"\r" not in path.read_bytes() and item.get("sha256") == sha(path), "patch bytes are noncanonical or mismatched")
     require(patches.get("canonical_sha256") == canonical_series(entries), "canonical patch series hash differs")
-    build = receipt["build"]; mozconfig = safe_file(root, build.get("mozconfig_path"))
-    require(build.get("mozconfig_sha256") == sha(mozconfig) and isinstance(build.get("command"), list) and build["command"] and all(isinstance(value, str) and value for value in build["command"]) and isinstance(build.get("environment"), dict) and all(build["environment"].values()), "build identity is incomplete")
-    configuration = receipt["configuration"]
-    require(set(configuration) == IDENTITY and all(isinstance(configuration[key], str) and configuration[key] for key in IDENTITY), "generated configuration identity is incomplete")
-    require(configuration["lto"] == "disabled" and set(receipt["claims"]) == CLAIMS, "unsupported claims")
-    policy = receipt["service_policy"]; policy_path = safe_file(root, policy.get("path"))
-    require(policy.get("issue") == 27 and policy_path.as_posix().endswith("docs/MINDY-IDENTITY-AND-SERVICES.md") and policy.get("sha256") == sha(policy_path) and policy.get("endpoints") == [], "unowned service endpoints or policy evidence")
-    artifact = receipt["artifact"]; manifest = artifact.get("manifest", {})
-    require(HEX.fullmatch(artifact.get("sha256", "")) and isinstance(artifact.get("size"), int) and artifact["size"] >= 0 and all(isinstance(artifact.get(key), str) and artifact[key] for key in ("path", "timestamp", "version")) and HEX.fullmatch(manifest.get("sha256", "")), "artifact identity is incomplete")
-    if artifact_root:
-        binary, metadata = safe_file(artifact_root, artifact["path"]), safe_file(artifact_root, manifest.get("path"))
-        require((sha(binary), binary.stat().st_size, sha(metadata)) == (artifact["sha256"], artifact["size"], manifest["sha256"]), "artifact hash, size, or manifest differs")
+    build = receipt["build"]; mozconfig = safe_path(root, build.get("mozconfig_path"))
+    require(build.get("mozconfig_path") == "config/mozconfig-pilot" and build.get("mozconfig_sha256") == sha(mozconfig) and isinstance(build.get("command"), list) and all(isinstance(value, str) and value.strip() for value in build["command"]) and isinstance(build.get("environment"), dict) and all(isinstance(value, str) and value.strip() for value in build["environment"].values()), "build identity is incomplete")
+    require(receipt["configuration"] == IDENTITY and set(receipt["claims"]) == CLAIMS, "generated configuration identity or claims differ")
+    policy = receipt["service_policy"]; policy_path = safe_path(root, policy.get("path"))
+    require(policy.get("issue") == 27 and policy.get("path") == POLICY and policy.get("sha256") == sha(policy_path), "service policy evidence differs")
+    require(isinstance(policy.get("endpoints"), list), "unowned or unclassified service endpoint")
+    for endpoint in policy["endpoints"]:
+        parsed = urlsplit(endpoint.get("url", "")); host = parsed.hostname or ""
+        require(set(endpoint) == {"url", "classification", "purpose", "policy_evidence"} and parsed.scheme and host and endpoint["classification"] in {"provider", "user_initiated", "account_configuration"} and endpoint["purpose"].strip() and endpoint["policy_evidence"] == f"{POLICY}#service-policy" and not any(name in host.lower() for name in ("mindy", "mozilla", "thunderbird")), "unowned or unclassified service endpoint")
+    artifact, manifest = receipt["artifact"], receipt["artifact"].get("manifest", {})
+    require(HEX.fullmatch(artifact.get("sha256", "")) and isinstance(artifact.get("size"), int) and artifact["size"] >= 0 and all(isinstance(artifact.get(key), str) and artifact[key] for key in ("path", "timestamp", "version")) and set(manifest) == {"path", "sha256"} and set(artifact.get("configuration", {})) == {"path", "sha256"}, "artifact identity is incomplete")
+    output_root = artifact_root or root
+    binary = safe_path(output_root, artifact["path"], required=bool(artifact_root)); ini = safe_path(output_root, manifest["path"], required=bool(artifact_root)); config = safe_path(output_root, artifact["configuration"]["path"], required=bool(artifact_root))
+    if classification == "canonical":
+        parser = configparser.ConfigParser(); parser.read(ini, encoding="utf-8")
+        generated = json.loads(config.read_text(encoding="utf-8"))
+        timestamp = datetime.fromtimestamp(binary.stat().st_mtime, timezone.utc).isoformat().replace("+00:00", "Z")
+        require((sha(binary), binary.stat().st_size, sha(ini), sha(config), timestamp) == (artifact["sha256"], artifact["size"], manifest["sha256"], artifact["configuration"]["sha256"], artifact["timestamp"]), "artifact hash, size, manifest, configuration, or timestamp differs")
+        require(parser["App"].get("Name") == IDENTITY["app"] and parser["App"].get("Version") == artifact["version"] and generated == {"identity": IDENTITY, "version": artifact["version"]}, "application version or generated identity differs")
     checks = receipt["verification"]
-    require(isinstance(checks, list) and checks and all(set(check) == {"command", "result", "output_sha256"} and check["result"] == "pass" and HEX.fullmatch(check["output_sha256"]) for check in checks), "verification results are incomplete")
-    require(isinstance(receipt["limitations"], list) and receipt["limitations"] and receipt["approval"] == {"status": "pending-independent-review", "reviewer": None}, "receipt self-approval or limitations are invalid")
+    require(isinstance(checks, list) and checks and all(set(check) == {"command", "result", "output_sha256"} and isinstance(check["command"], list) and check["command"] and all(isinstance(value, str) and value.strip() for value in check["command"]) and isinstance(check["result"], str) and check["result"].strip() and HEX.fullmatch(check["output_sha256"]) for check in checks), "verification records are incomplete")
+    require(isinstance(receipt["unknowns"], list) and receipt["unknowns"] and all(isinstance(value, str) and value.strip() for value in receipt["unknowns"]) and isinstance(receipt["limitations"], list) and receipt["limitations"] and all(isinstance(value, str) and value.strip() for value in receipt["limitations"]) and receipt["approval"] == {"status": "pending-independent-review", "reviewer": None}, "receipt self-approval, unknowns, or limitations are invalid")
 
 def main():
     parser = argparse.ArgumentParser(); parser.add_argument("receipt"); parser.add_argument("--artifact-root"); parser.add_argument("--allow-historical", action="store_true")
     args = parser.parse_args()
     try:
         with open(args.receipt, encoding="utf-8") as stream: validate(json.load(stream), artifact_root=args.artifact_root, accept_historical=args.allow_historical)
-    except (OSError, json.JSONDecodeError, ReceiptError, subprocess.CalledProcessError) as error:
+    except (OSError, KeyError, TypeError, configparser.Error, json.JSONDecodeError, ReceiptError, subprocess.CalledProcessError) as error:
         print(f"artifact receipt: FAIL: {error}", file=sys.stderr); return 1
     print("artifact receipt: PASS"); return 0
 
