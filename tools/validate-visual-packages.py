@@ -6,7 +6,7 @@ from pathlib import Path, PurePosixPath
 
 ROOT = Path(__file__).resolve().parents[1]
 EXPECTED_SERIES = ("0002-mindy-mail-shell.patch", "0003-mindy-visual-packages.patch",
-                   "0004-mindy-identity-namespace.patch")
+                   "0004-mindy-identity-namespace.patch", "0005-mindy-branding-package.patch")
 PACKAGE_PATCH = EXPECTED_SERIES[1]
 REQUIRED_EDGES = {("adapters", "contracts"), ("ui", "adapters"),
                   ("ui", "theme"), ("ui", "brand"), ("test", "ui")}

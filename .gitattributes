@@ -11,6 +11,8 @@
 patches/*.patch text eol=lf whitespace=-blank-at-eol
 patches/series text eol=lf
 tools/tests/fixtures/0004-moz.configure-preimage text eol=lf
+tools/tests/fixtures/0005-confvars-preimage text eol=lf
+overlay/comm/mail/branding/mindy/** text eol=lf
 /assets/brand-production/mindy-mark.svg text eol=lf
 /assets/brand-production/mindy-wordmark.svg text eol=lf
 /assets/brand-production/generated/content/about-logo.svg text eol=lf
