@@ -4,6 +4,7 @@
 import argparse
 import hashlib
 import json
+import re
 import struct
 import xml.etree.ElementTree as ET
 import zlib
@@ -26,8 +27,6 @@ PNG = {**DEFAULTS, "VisualElements_70.png": (126, 126), "VisualElements_150.png"
        "content/about-logo.png": (192, 192), "content/about-logo@2x.png": (384, 384), "content/about.png": (300, 236)}
 ICO = {name: (16, 32, 48, 64, 128, 256) for name in ("addressbook.ico", "writeMessage.ico", "newmail.ico", "messengerWindow.ico")}
 BMP = {"wizHeader.bmp": (150, 57), "wizHeaderRTL.bmp": (150, 57), "wizWatermark.bmp": (164, 314)}
-MARK_PATHS = ("M96 336V196L256 320L416 196V336", "M88 112Q160 118 224 198", "M288 198Q352 118 424 112")
-COLORS = ((5, 27, 64, 36), (14, 165, 164, 30), (37, 99, 235, 30))
 
 
 def require(condition, message):
@@ -35,15 +34,44 @@ def require(condition, message):
         raise ValueError(message)
 
 
-def validate_sources():
+def svg_path(data):
+    require(re.fullmatch(r"[MLVQ0-9.\s-]+", data) is not None, "unsupported SVG path")
+    tokens = re.findall(r"[MLVQ]|-?\d+(?:\.\d+)?", data)
+    position, command, index, segments = (0.0, 0.0), None, 0, []
+    lengths = {"M": 2, "L": 2, "V": 1, "Q": 4}
+    while index < len(tokens):
+        if tokens[index] in lengths:
+            command, index = tokens[index], index + 1
+        require(command in lengths and index + lengths[command] <= len(tokens), "unsupported SVG path")
+        values = tuple(float(value) for value in tokens[index:index + lengths[command]])
+        index += lengths[command]
+        if command == "M":
+            position = values
+        elif command == "V":
+            end = position[0], values[0]
+            segments.append((position, end))
+            position = end
+        elif command == "L":
+            segments.append((position, values))
+            position = values
+        else:
+            control, end = values[:2], values[2:]
+            segments.append((position, control, end))
+            position = end
+    require(segments, "empty SVG path")
+    return segments
+
+
+def mark_geometry():
     mark = ET.fromstring((ASSET_ROOT / SOURCES[0]).read_bytes())
     wordmark = ET.fromstring((ASSET_ROOT / SOURCES[1]).read_bytes())
     require(not mark.findall(".//{*}text") and not wordmark.findall(".//{*}text"), "SVG text is forbidden")
-    paths = tuple(node.attrib.get("d") for node in mark.findall("{*}path"))
-    colors = tuple(node.attrib.get("stroke") for node in mark.findall("{*}path"))
-    require(paths == MARK_PATHS and colors == ("#051B40", "#0EA5A4", "#2563EB"), "mark geometry or colors differ")
+    paths = mark.findall("{*}path")
+    require(len(paths) == 3, "Mindy mark path count differs")
     for source in SOURCES:
         require(not any(name in (ASSET_ROOT / source).read_text(encoding="utf-8").lower() for name in ("thunderbird", "mozilla", "outlook")), "prohibited product identity")
+    return [(svg_path(path.attrib["d"]), float(path.attrib["stroke-width"]),
+             tuple(int(path.attrib["stroke"][index:index + 2], 16) for index in (1, 3, 5))) for path in paths]
 
 
 def paint(canvas, width, height, x, y, radius, color):
@@ -72,13 +100,15 @@ def curve(start, control, end):
              (1 - t) ** 2 * start[1] + 2 * (1 - t) * t * control[1] + t ** 2 * end[1]) for t in (n / 32 for n in range(33))]
 
 
-def raster(width, height):
+def raster(width, height, geometry):
     canvas = bytearray(width * height * 4)
     scale = min(width, height) * .88 / 512
     left, top = (width - 512 * scale) / 2, (height - 512 * scale) / 2
-    stroke(canvas, width, height, [(96, 336), (96, 196), (256, 320), (416, 196), (416, 336)], 36, COLORS[0][:3], scale, left, top)
-    stroke(canvas, width, height, curve((88, 112), (160, 118), (224, 198)), 30, COLORS[1][:3], scale, left, top)
-    stroke(canvas, width, height, curve((288, 198), (352, 118), (424, 112)), 30, COLORS[2][:3], scale, left, top)
+    for segments, width_source, color in geometry:
+        points = [segments[0][0]]
+        for segment in segments:
+            points.extend([segment[-1]] if len(segment) == 2 else curve(*segment)[1:])
+        stroke(canvas, width, height, points, width_source, color, scale, left, top)
     return bytes(canvas)
 
 
@@ -86,14 +116,14 @@ def chunk(name, data):
     return struct.pack(">I", len(data)) + name + data + struct.pack(">I", zlib.crc32(name + data) & 0xffffffff)
 
 
-def png(width, height):
-    pixels = raster(width, height)
+def png(width, height, geometry):
+    pixels = raster(width, height, geometry)
     rows = b"".join(b"\0" + pixels[row * width * 4:(row + 1) * width * 4] for row in range(height))
     return b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", struct.pack(">IIBBBBB", width, height, 8, 6, 0, 0, 0)) + chunk(b"IDAT", zlib.compress(rows, 9)) + chunk(b"IEND", b"")
 
 
-def ico(sizes):
-    images = [png(size, size) for size in sizes]
+def ico(sizes, geometry):
+    images = [png(size, size, geometry) for size in sizes]
     offset = 6 + 16 * len(images)
     entries = []
     for size, image in zip(sizes, images):
@@ -102,8 +132,8 @@ def ico(sizes):
     return struct.pack("<HHH", 0, 1, len(images)) + b"".join(entries + images)
 
 
-def bmp(width, height):
-    source, stride = raster(width, height), (width * 3 + 3) & ~3
+def bmp(width, height, geometry):
+    source, stride = raster(width, height, geometry), (width * 3 + 3) & ~3
     rows = []
     for row in range(height - 1, -1, -1):
         pixels = bytearray()
@@ -119,11 +149,12 @@ def bmp(width, height):
 
 
 def derivatives():
+    geometry = mark_geometry()
     result = {"content/about-logo.svg": (ASSET_ROOT / "mindy-mark.svg").read_bytes(),
               "content/about-wordmark.svg": (ASSET_ROOT / "mindy-wordmark.svg").read_bytes()}
-    result.update({path: png(*size) for path, size in PNG.items()})
-    result.update({path: ico(sizes) for path, sizes in ICO.items()})
-    result.update({path: bmp(*size) for path, size in BMP.items()})
+    result.update({path: png(*size, geometry) for path, size in PNG.items()})
+    result.update({path: ico(sizes, geometry) for path, sizes in ICO.items()})
+    result.update({path: bmp(*size, geometry) for path, size in BMP.items()})
     return result
 
 
@@ -138,7 +169,6 @@ def metadata(path, data):
 
 
 def generate(check=False):
-    validate_sources()
     files = derivatives()
     manifest = {"schema": 1, "generator": "tools/generate_brand_assets.py", "sources": {name: hashlib.sha256((ASSET_ROOT / name).read_bytes()).hexdigest() for name in SOURCES}, "derivatives": {name: metadata(name, data) for name, data in sorted(files.items())}}
     expected = {OUTPUT / name: data for name, data in files.items()}

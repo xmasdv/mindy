@@ -1,7 +1,11 @@
 import hashlib
 import importlib.util
 import json
+import shutil
 import struct
+import subprocess
+import sys
+import tempfile
 import unittest
 import xml.etree.ElementTree as ET
 import zlib
@@ -25,12 +29,13 @@ class BrandAssetTests(unittest.TestCase):
                 self.assertFalse(any(name in text.lower() for name in ("thunderbird", "mozilla", "outlook")))
                 ET.fromstring(text)
         mark = ET.fromstring((ASSETS / "mindy-mark.svg").read_bytes())
-        self.assertEqual(brand.MARK_PATHS, tuple(node.attrib["d"] for node in mark.findall("{*}path")))
         self.assertEqual(("#051B40", "#0EA5A4", "#2563EB"), tuple(node.attrib["stroke"] for node in mark.findall("{*}path")))
+        self.assertEqual((36.0, 30.0, 30.0), tuple(width for _, width, _ in brand.mark_geometry()))
 
     def test_manifest_hashes_dimensions_and_source_relationship(self):
         manifest = json.loads((OUTPUT / "manifest.json").read_text(encoding="utf-8"))
         expected = set(brand.PNG) | set(brand.ICO) | set(brand.BMP) | {"content/about-logo.svg", "content/about-wordmark.svg"}
+        self.assertEqual(34, len(expected))
         self.assertEqual(expected, set(manifest["derivatives"]))
         self.assertEqual("tools/generate_brand_assets.py", manifest["generator"])
         for source in brand.SOURCES:
@@ -71,8 +76,38 @@ class BrandAssetTests(unittest.TestCase):
             (OUTPUT / "default16.png").write_bytes(original + b"drift")
             with self.assertRaisesRegex(ValueError, "generated assets differ"):
                 brand.generate(check=True)
+            (OUTPUT / "default16.png").unlink()
+            with self.assertRaisesRegex(ValueError, "generated assets differ"):
+                brand.generate(check=True)
         finally:
             (OUTPUT / "default16.png").write_bytes(original)
+
+    def test_master_geometry_and_style_causally_change_every_raster_family(self):
+        for before, after in (("stroke-width=\"36\"", "stroke-width=\"42\""), ("#0EA5A4", "#14B8A6"), ("M96 336", "M104 336")):
+            with self.subTest(change=before), tempfile.TemporaryDirectory() as temporary:
+                isolated = Path(temporary) / "brand-production"
+                shutil.copytree(ASSETS, isolated)
+                master = isolated / "mindy-mark.svg"
+                old_root, brand.ASSET_ROOT = brand.ASSET_ROOT, isolated
+                try:
+                    original = brand.derivatives()
+                    master.write_text(master.read_text(encoding="utf-8").replace(before, after, 1), encoding="utf-8", newline="\n")
+                    changed = brand.derivatives()
+                finally:
+                    brand.ASSET_ROOT = old_root
+                for path in set(brand.PNG) | set(brand.ICO) | set(brand.BMP):
+                    self.assertNotEqual(original[path], changed[path])
+
+    def test_autocrlf_clone_keeps_hash_bound_files_and_generator_check(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            clone = Path(temporary) / "clone"
+            revision = subprocess.run(["git", "-C", str(ROOT), "rev-parse", "HEAD"], capture_output=True, text=True, check=True).stdout.strip()
+            subprocess.run(["git", "clone", "--quiet", "--no-checkout", "--no-local", str(ROOT), str(clone)], check=True)
+            subprocess.run(["git", "-C", str(clone), "-c", "core.autocrlf=true", "checkout", "--quiet", "--detach", revision], check=True)
+            for path in ("mindy-mark.svg", "mindy-wordmark.svg", "generated/manifest.json"):
+                self.assertNotIn(b"\r\n", (clone / "assets" / "brand-production" / path).read_bytes())
+            result = subprocess.run([sys.executable, str(clone / "tools" / "generate_brand_assets.py"), "--check"], capture_output=True, text=True)
+            self.assertEqual(0, result.returncode, result.stderr)
 
 
 if __name__ == "__main__":
