@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "classification": "template",
+  "git": {"commit": "REPLACE", "integration": {"remote": "origin", "url": "https://github.com/xmasdv/mindy.git", "branch": "feat/mindy-desktop-mvp", "commit": "REPLACE"}},
+  "source_pins": {"lock_path": "sources.lock", "clean_status": {"repository": {"command": "git status --porcelain", "result": "clean", "output_sha256": "REPLACE"}, "gecko": {"command": "hg status -mard", "result": "clean", "output_sha256": "REPLACE"}, "comm": {"command": "hg status -mard", "result": "clean", "output_sha256": "REPLACE"}}, "gecko": {"repository": "REPLACE", "revision": "REPLACE"}, "comm": {"repository": "REPLACE", "revision": "REPLACE"}},
+  "patches": {"series_path": "patches/series", "canonical_sha256": "REPLACE", "entries": [{"path": "REPLACE.patch", "sha256": "REPLACE"}]},
+  "build": {"mozconfig_path": "config/mozconfig-pilot", "mozconfig_sha256": "REPLACE", "command": ["REPLACE"], "environment": {"os": "REPLACE", "architecture": "REPLACE", "mozconfig": "config/mozconfig-pilot"}},
+  "configuration": {"app": "Mindy", "product": "Mindy", "profile": "mindy", "remoting": "mindy", "vendor": "Mindy Project", "channel": "development", "branding": "mindy", "updater": "disabled", "lto": "disabled"},
+  "artifact": {"path": "REPLACE/mindy.exe", "sha256": "REPLACE", "size": 0, "timestamp": "REPLACE", "version": "REPLACE", "manifest": {"path": "REPLACE/application.ini", "sha256": "REPLACE"}, "configuration": {"path": "REPLACE/mindy-config.json", "sha256": "REPLACE"}},
+  "service_policy": {"issue": 27, "path": "docs/MINDY-IDENTITY-AND-SERVICES.md", "sha256": "REPLACE", "endpoints": []},
+  "verification": [{"command": ["REPLACE"], "command_id": "REPLACE", "expected": "pass", "output": {"scope": "artifact", "path": "REPLACE/verification.json", "sha256": "REPLACE"}}],
+  "unknowns": [{"status": "unknown", "code": "artifact_not_release", "detail": "A clean canonical development artifact is still pending."}],
+  "limitations": [{"status": "pending", "code": "runtime_validation_pending", "detail": "Runtime validation is pending for the development baseline."}],
+  "claims": ["clean-source", "no-owned-service-endpoints", "lto-disabled"],
+  "approval": {"status": "pending-independent-review", "reviewer": null}
+}
