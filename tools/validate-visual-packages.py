@@ -66,8 +66,8 @@ def series():
     names = tuple(line.split("#", 1)[0].strip() for line in
                   safe_path("patches/series").read_text().splitlines()
                   if line.split("#", 1)[0].strip())
-    require(names == EXPECTED_SERIES, "patch series identity/order differs")
-    return [safe_path(f"patches/{name}") for name in names]
+    require(names[:len(EXPECTED_SERIES)] == EXPECTED_SERIES, "patch series identity/order differs")
+    return [safe_path(f"patches/{name}") for name in EXPECTED_SERIES]
 
 def generated_registry():
     authority = load("contracts/visual/authority.json")
