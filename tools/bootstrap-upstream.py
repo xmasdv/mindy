@@ -26,7 +26,7 @@ PACKAGE_ASSETS = ("default16.png", "default22.png", "default24.png", "default32.
     "messengerWindow.ico", "newmail.ico", "writeMessage.ico", "wizHeader.bmp",
     "wizHeaderRTL.bmp", "wizWatermark.bmp", "content/about-logo.png",
     "content/about-logo.svg", "content/about-logo@2x.png", "content/about-wordmark.svg",
-    "content/about.png")
+    "content/about.png", "TB-symbolic.svg")
 PACKAGE_FILES = ("moz.build", "configure.sh", "jar.mn", "branding.nsi",
     "thunderbird.VisualElementsManifest.xml", "content/aboutDialog.css",
     "pref/thunderbird-branding.js", "locales/moz.build", "locales/jar.mn",

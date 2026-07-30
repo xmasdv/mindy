@@ -34,14 +34,18 @@ class BrandAssetTests(unittest.TestCase):
 
     def test_manifest_hashes_dimensions_and_source_relationship(self):
         manifest = json.loads((OUTPUT / "manifest.json").read_text(encoding="utf-8"))
-        expected = set(brand.PNG) | set(brand.ICO) | set(brand.BMP) | {"content/about-logo.svg", "content/about-wordmark.svg"}
-        self.assertEqual(34, len(expected))
+        expected = set(brand.PNG) | set(brand.ICO) | set(brand.BMP) | {"content/about-logo.svg", "content/about-wordmark.svg", brand.SYMBOLIC}
+        self.assertEqual(35, len(expected))
         self.assertEqual(expected, set(manifest["derivatives"]))
         self.assertEqual("tools/generate_brand_assets.py", manifest["generator"])
         for source in brand.SOURCES:
             self.assertEqual(hashlib.sha256((ASSETS / source).read_bytes()).hexdigest(), manifest["sources"][source])
         self.assertEqual((ASSETS / "mindy-mark.svg").read_bytes(), (OUTPUT / "content/about-logo.svg").read_bytes())
         self.assertEqual((ASSETS / "mindy-wordmark.svg").read_bytes(), (OUTPUT / "content/about-wordmark.svg").read_bytes())
+        symbolic = ET.fromstring((OUTPUT / brand.SYMBOLIC).read_bytes())
+        self.assertFalse(symbolic.findall(".//{*}text"))
+        self.assertEqual([path.attrib["d"] for path in ET.fromstring((ASSETS / "mindy-mark.svg").read_bytes()).findall("{*}path")], [path.attrib["d"] for path in symbolic.findall("{*}path")])
+        self.assertTrue(all(path.attrib["stroke"] == "currentColor" for path in symbolic.findall("{*}path")))
         for path, details in manifest["derivatives"].items():
             data = (OUTPUT / path).read_bytes()
             with self.subTest(path=path):
@@ -112,6 +116,8 @@ class BrandAssetTests(unittest.TestCase):
                     brand.ASSET_ROOT = old_root
                 for path in set(brand.PNG) | set(brand.ICO) | set(brand.BMP):
                     self.assertNotEqual(original[path], changed[path])
+                if before == "M96 336":
+                    self.assertNotEqual(original[brand.SYMBOLIC], changed[brand.SYMBOLIC])
 
     def test_autocrlf_clone_keeps_hash_bound_files_and_generator_check(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -119,7 +125,7 @@ class BrandAssetTests(unittest.TestCase):
             revision = subprocess.run(["git", "-C", str(ROOT), "rev-parse", "HEAD"], capture_output=True, text=True, check=True).stdout.strip()
             subprocess.run(["git", "clone", "--quiet", "--no-checkout", "--no-local", str(ROOT), str(clone)], check=True)
             subprocess.run(["git", "-C", str(clone), "-c", "core.autocrlf=true", "checkout", "--quiet", "--detach", revision], check=True)
-            for path in ("mindy-mark.svg", "mindy-wordmark.svg", "generated/manifest.json"):
+            for path in ("mindy-mark.svg", "mindy-wordmark.svg", "generated/manifest.json", "generated/TB-symbolic.svg"):
                 self.assertNotIn(b"\r\n", (clone / "assets" / "brand-production" / path).read_bytes())
             result = subprocess.run([sys.executable, str(clone / "tools" / "generate_brand_assets.py"), "--check"], capture_output=True, text=True)
             self.assertEqual(0, result.returncode, result.stderr)

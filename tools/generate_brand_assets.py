@@ -27,6 +27,7 @@ PNG = {**DEFAULTS, "VisualElements_70.png": (126, 126), "VisualElements_150.png"
        "content/about-logo.png": (192, 192), "content/about-logo@2x.png": (384, 384), "content/about.png": (300, 236)}
 ICO = {name: (16, 32, 48, 64, 128, 256) for name in ("addressbook.ico", "writeMessage.ico", "newmail.ico", "messengerWindow.ico")}
 BMP = {"wizHeader.bmp": (150, 57), "wizHeaderRTL.bmp": (150, 57), "wizWatermark.bmp": (164, 314)}
+SYMBOLIC = "TB-symbolic.svg"
 
 
 def require(condition, message):
@@ -148,6 +149,16 @@ def bmp(width, height, geometry):
     return b"BM" + struct.pack("<IHHI", 54 + len(body), 0, 0, 54) + struct.pack("<IIIHHIIIIII", 40, width, height, 1, 24, 0, len(body), 0, 0, 0, 0) + body
 
 
+def symbolic():
+    mark = ET.fromstring((ASSET_ROOT / "mindy-mark.svg").read_bytes())
+    paths = mark.findall("{*}path")
+    require(len(paths) == 3 and not mark.findall(".//{*}text"), "invalid Mindy mark")
+    lines = ['<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">']
+    for path in paths:
+        lines.append(f'  <path d="{path.attrib["d"]}" fill="none" stroke="currentColor" stroke-width="{path.attrib["stroke-width"]}" stroke-linecap="{path.attrib["stroke-linecap"]}" stroke-linejoin="{path.attrib.get("stroke-linejoin", "round")}"/>')
+    return ("\n".join(lines + ["</svg>"]) + "\n").encode()
+
+
 def derivatives():
     geometry = mark_geometry()
     result = {"content/about-logo.svg": (ASSET_ROOT / "mindy-mark.svg").read_bytes(),
@@ -155,6 +166,7 @@ def derivatives():
     result.update({path: png(*size, geometry) for path, size in PNG.items()})
     result.update({path: ico(sizes, geometry) for path, sizes in ICO.items()})
     result.update({path: bmp(*size, geometry) for path, size in BMP.items()})
+    result[SYMBOLIC] = symbolic()
     return result
 
 

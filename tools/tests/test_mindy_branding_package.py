@@ -52,6 +52,14 @@ class MindyBrandingPackageTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "asset differs"):
                 bootstrap.verify_branding_overlay(overlay, generated)
             shutil.copyfile(GENERATED / "default16.png", overlay / "default16.png")
+            (overlay / "TB-symbolic.svg").write_text("drift", encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "asset differs"):
+                bootstrap.verify_branding_overlay(overlay, generated)
+            shutil.copyfile(GENERATED / "TB-symbolic.svg", overlay / "TB-symbolic.svg")
+            (overlay / "TB-symbolic.svg").unlink()
+            with self.assertRaisesRegex(ValueError, "files differ"):
+                bootstrap.verify_branding_overlay(overlay, generated)
+            shutil.copyfile(GENERATED / "TB-symbolic.svg", overlay / "TB-symbolic.svg")
             (overlay / "locales/en-US/brand.ftl").write_text("-brand-short-name = Thunderbird\n", encoding="utf-8")
             with self.assertRaisesRegex(ValueError, "locale or config"):
                 bootstrap.verify_branding_overlay(overlay, generated)

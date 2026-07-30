@@ -18,6 +18,7 @@ overlay/comm/mail/branding/mindy/** text eol=lf
 /assets/brand-production/generated/content/about-logo.svg text eol=lf
 /assets/brand-production/generated/content/about-wordmark.svg text eol=lf
 assets/brand-production/generated/manifest.json text eol=lf
+assets/brand-production/generated/TB-symbolic.svg text eol=lf
 tools/generate_brand_assets.py text eol=lf
 tools/tests/test_brand_assets.py text eol=lf
 
