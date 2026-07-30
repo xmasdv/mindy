@@ -57,6 +57,7 @@ Inherited does not mean gap-free. The pinned baseline is Thunderbird 140.13.0esr
 | [Architecture](docs/ARCHITECTURE.md) | Intended downstream architecture, trust boundaries, and design status. |
 | [Security](docs/SECURITY.md) | Threat model, invariants, telemetry exclusions, and disclosure guidance. |
 | [Roadmap](docs/ROADMAP.md) | Phase order, exit criteria, and deferred work. |
+| [Identity and services](docs/MINDY-IDENTITY-AND-SERVICES.md) | Development identity defaults, service ownership limits, and release evidence. |
 | [Contributing](CONTRIBUTING.md) | Contribution, external build-storage, and review rules. |
 | [Open-source model](docs/OPEN_SOURCE.md) | Core licensing, contribution terms, and sustainable development boundaries. |
 
