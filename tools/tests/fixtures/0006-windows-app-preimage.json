@@ -1,0 +1,20 @@
+{
+  "repository": "https://hg.mozilla.org/releases/comm-esr140",
+  "revision": "faf78db7dfb184002adc6b859c8ad395ff216239",
+  "build_wiring": {
+    "splash_rc": {"path": "comm/mail/app/splash.rc", "sha256": "914df1c50d0c01dc65c20801e77cb9fc88edc6ef7da7542158810a75fd822666", "line": "1 24 \"thunderbird.exe.manifest\""},
+    "moz_build": {"path": "comm/mail/app/moz.build", "sha256": "e05ad99668a7de170d846184dc4b49f2a4d157f026a9e397f7e3f778206c6cb3", "line": "    RCINCLUDE = \"splash.rc\""}
+  },
+  "files": [
+    {
+      "path": "comm/mail/app/module.ver",
+      "sha256": "e2bed07ee2e2412ff12c52d1079a1e91c4978bee68b03cd4049f6e322c555f7f",
+      "base64": "V0lOMzJfTU9EVUxFX0RFU0NSSVBUSU9OPUBNT1pfQVBQX0RJU1BMQVlOQU1FQApXSU4zMl9NT0RVTEVfUFJPRFVDVE5BTUU9QE1PWl9BUFBfRElTUExBWU5BTUVACldJTjMyX01PRFVMRV9OQU1FPUBNT1pfQVBQX0RJU1BMQVlOQU1FQApXSU4zMl9NT0RVTEVfRklMRVZFUlNJT049QE1PWl9BUFBfV0lOVkVSU0lPTkAKV0lOMzJfTU9EVUxFX0ZJTEVWRVJTSU9OX1NUUklORz1ATU9aX0FQUF9WRVJTSU9OQApXSU4zMl9NT0RVTEVfUFJPRFVDVFZFUlNJT049QE1PWl9BUFBfV0lOVkVSU0lPTkAKV0lOMzJfTU9EVUxFX1BST0RVQ1RWRVJTSU9OX1NUUklORz1ATU9aX0FQUF9WRVJTSU9OQApXSU4zMl9NT0RVTEVfQ09QWVJJR0hUPalUaHVuZGVyYmlyZCBhbmQgTW96aWxsYSBEZXZlbG9wZXJzLCBhY2NvcmRpbmcgdG8gdGhlIE1QTCAxLjEvR1BMIDIuMC9MR1BMIDIuMSBsaWNlbnNlcywgYXMgYXBwbGljYWJsZS4KV0lOMzJfTU9EVUxFX0NPTVBBTllOQU1FPU1vemlsbGEgQ29ycG9yYXRpb24KV0lOMzJfTU9EVUxFX1RSQURFTUFSS1M9VGh1bmRlcmJpcmQgaXMgYSBUcmFkZW1hcmsgb2YgVGhlIE1vemlsbGEgRm91bmRhdGlvbi4KV0lOMzJfTU9EVUxFX0NPTU1FTlQ9TW96aWxsYSBUaHVuZGVyYmlyZCBNYWlsIGFuZCBOZXdzIENsaWVudAo="
+    },
+    {
+      "path": "comm/mail/app/thunderbird.exe.manifest",
+      "sha256": "143691761e4491fb490ed29384348fda5cf86a7167b17845c045becdd8ccd5a8",
+      "fixture": "0006-thunderbird.exe.manifest-preimage"
+    }
+  ]
+}

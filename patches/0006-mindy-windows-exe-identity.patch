@@ -1,0 +1,26 @@
+diff --git a/comm/mail/app/module.ver b/comm/mail/app/module.ver
+--- a/comm/mail/app/module.ver
++++ b/comm/mail/app/module.ver
+@@ -10,3 +10,3 @@
+-WIN32_MODULE_COMPANYNAME=Mozilla Corporation
+-WIN32_MODULE_TRADEMARKS=Thunderbird is a Trademark of The Mozilla Foundation.
+-WIN32_MODULE_COMMENT=Mozilla Thunderbird Mail and News Client
++WIN32_MODULE_COMPANYNAME=Mindy Project
++WIN32_MODULE_TRADEMARKS=
++WIN32_MODULE_COMMENT=Mindy Mail and Calendar Client
+diff --git a/comm/mail/app/thunderbird.exe.manifest b/comm/mail/app/thunderbird.exe.manifest
+--- a/comm/mail/app/thunderbird.exe.manifest
++++ b/comm/mail/app/thunderbird.exe.manifest
+@@ -3,10 +3,10 @@
+ <assemblyIdentity
+         version="1.0.0.0"
+         processorArchitecture="*"
+-        name="Mozilla.Thunderbird"
++        name="Mindy.Application"
+         type="win32"
+ />
+-<description>Mozilla Thunderbird</description>
++<description>Mindy</description>
+ <dependency>
+         <dependentAssembly>
+                 <assemblyIdentity
