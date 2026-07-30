@@ -34,7 +34,10 @@ def load(raw):
         return json.load(stream)
 
 def digest(path):
-    return hashlib.sha256(path.read_bytes()).hexdigest()
+    data = path.read_bytes()
+    if path == ROOT / "assets" / "brand-production" / "mindy-mark.svg":
+        data = data.replace(b"\r\n", b"\n").replace(b"\n", b"\r\n")
+    return hashlib.sha256(data).hexdigest()
 
 def patch_digest(path):
     data = path.read_bytes()
