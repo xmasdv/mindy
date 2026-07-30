@@ -70,10 +70,10 @@ def evidence_records(records, repository, artifact):
         require(sha(path) == output["sha256"], "verification output evidence differs")
         try: envelope = json.loads(path.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError) as error: raise ReceiptError("verification output is malformed") from error
-        require(envelope == {"schema_version": 1, "result": "pass", "command": record["command_id"], "exit_code": 0}, "verification outcome differs")
+        require(envelope == {"schema_version": 1, "result": "pass", "command": record["command"], "exit_code": 0}, "verification outcome differs")
 
 def status_records(records):
-    require(isinstance(records, list) and records and all(set(item) == {"status", "code", "detail"} and item["status"] in {"pending", "unknown"} and item["code"] in PENDING_CODES and isinstance(item["detail"], str) and len(item["detail"].strip()) >= 12 and not re.search(r"\b(complete(?:d)?|proven|accepted|all facts known|none)\b", item["detail"], re.I) for item in records), "unknowns or limitations are invalid")
+    require(isinstance(records, list) and records and all(set(item) == {"status", "code", "detail"} and item["status"] in {"pending", "unknown"} and item["code"] in PENDING_CODES and isinstance(item["detail"], str) and len(item["detail"].strip()) >= 12 and not re.search(r"\b(complet(?:e(?:d)?|ion)|proven|accepted|all facts known|none)\b", item["detail"], re.I) for item in records), "unknowns or limitations are invalid")
     return True
 
 def validate(receipt, root=ROOT, artifact_root=None, state=None, accept_historical=False, fixture=False):

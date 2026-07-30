@@ -21,7 +21,7 @@ class ArtifactReceiptTests(unittest.TestCase):
     def tearDown(self): self.temp.cleanup()
 
     def write_output(self):
-        for path, data in {"dist/mindy.exe": b"binary", "dist/application.ini": b"[App]\nName=Mindy\nVersion=0\n", "dist/mindy-config.json": json.dumps({"identity": v.IDENTITY, "version": "0"}).encode(), "verification/unit.json": json.dumps({"schema_version": 1, "result": "pass", "command": "receipt-tests", "exit_code": 0}).encode()}.items():
+        for path, data in {"dist/mindy.exe": b"binary", "dist/application.ini": b"[App]\nName=Mindy\nVersion=0\n", "dist/mindy-config.json": json.dumps({"identity": v.IDENTITY, "version": "0"}).encode(), "verification/unit.json": json.dumps({"schema_version": 1, "result": "pass", "command": ["python", "-m", "unittest"], "exit_code": 0}).encode()}.items():
             target = self.artifacts / path; target.parent.mkdir(parents=True, exist_ok=True); target.write_bytes(data)
 
     def receipt(self, classification="synthetic"):
@@ -99,11 +99,11 @@ class ArtifactReceiptTests(unittest.TestCase):
         with self.assertRaisesRegex(v.ReceiptError, "verification records"): self.check(receipt)
         output = self.artifacts / "verification/unit.json"
         for result in ("fail", "unavailable"):
-            output.write_text(json.dumps({"schema_version": 1, "result": result, "command": "receipt-tests", "exit_code": 1}), encoding="utf-8")
+            output.write_text(json.dumps({"schema_version": 1, "result": result, "command": ["python", "-m", "unittest"], "exit_code": 1}), encoding="utf-8")
             with self.assertRaisesRegex(v.ReceiptError, "verification outcome"): self.check(self.receipt())
         output.write_text("{", encoding="utf-8")
         with self.assertRaisesRegex(v.ReceiptError, "verification output is malformed"): self.check(self.receipt())
-        output.write_text(json.dumps({"schema_version": 1, "result": "pass", "command": "other", "exit_code": 0}), encoding="utf-8")
+        output.write_text(json.dumps({"schema_version": 1, "result": "pass", "command": ["python", "-m", "other"], "exit_code": 0}), encoding="utf-8")
         with self.assertRaisesRegex(v.ReceiptError, "verification outcome"): self.check(self.receipt())
         self.write_output()
         receipt = self.receipt(); receipt["unknowns"] = []
@@ -111,6 +111,8 @@ class ArtifactReceiptTests(unittest.TestCase):
         receipt = self.receipt(); receipt["unknowns"][0]["code"] = "invented_pending"
         with self.assertRaisesRegex(v.ReceiptError, "unknowns or limitations"): self.check(receipt)
         receipt = self.receipt(); receipt["limitations"][0]["detail"] = "Runtime validation completed and accepted."
+        with self.assertRaisesRegex(v.ReceiptError, "unknowns or limitations"): self.check(receipt)
+        receipt = self.receipt(); receipt["limitations"][0]["detail"] = "Completion of runtime validation is claimed."
         with self.assertRaisesRegex(v.ReceiptError, "unknowns or limitations"): self.check(receipt)
         receipt = self.receipt(); receipt["claims"].append("supported-release")
         with self.assertRaisesRegex(v.ReceiptError, "identity or claims"): self.check(receipt)
