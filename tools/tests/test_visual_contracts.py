@@ -97,6 +97,19 @@ class VisualContractAdversarialTests(unittest.TestCase):
             with self.assertRaisesRegex(v.ContractError, "patch bytes must use LF"):
                 v.patch_digest(patch)
 
+    def test_master_authority_requires_canonical_lf_bytes(self):
+        master = ROOT / "assets" / "brand-production" / "mindy-mark.svg"
+        canonical = master.read_bytes()
+        self.assertNotIn(b"\r", canonical)
+        try:
+            v.validate()
+            for mutated in (canonical.replace(b"\n", b"\r\n"), canonical.replace(b"\n", b"\r\n", 1)):
+                master.write_bytes(mutated)
+                with self.assertRaisesRegex(v.ContractError, "authority hash mismatch"):
+                    v.validate()
+        finally:
+            master.write_bytes(canonical)
+
     def test_checked_out_patch_hash_and_pinned_fixture_application(self):
         authority = v.load("contracts/visual/authority.json")["implementation_evidence"][0]
         patch_bytes = PATCH.read_bytes()
