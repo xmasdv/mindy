@@ -26,7 +26,9 @@ def safe_path(root, raw, required=True):
     require(not raw.startswith(("/", "\\")) and not re.match(r"^[A-Za-z]:", raw), f"unsafe path: {raw}")
     parts = re.split(r"[\\/]", raw)
     require(all(part not in ("", ".", "..") for part in parts), f"unsafe path: {raw}")
-    base = Path(root).resolve(strict=True)
+    base = Path(root)
+    require(not linked(base), f"linked root rejected: {root}")
+    base = base.resolve(strict=True)
     require(not linked(base), f"linked root rejected: {root}")
     path = base
     for part in parts:
@@ -55,6 +57,18 @@ def repository_state(root):
 
 def clean_records(state):
     return {"repository": {"command": "git status --porcelain", "result": "clean", "output_sha256": state["clean"]}, **{name: {"command": "hg status -mard", "result": "clean", "output_sha256": item["status_sha256"]} for name, item in state["sources"].items()}}
+
+def evidence_records(records, repository, artifact):
+    require(isinstance(records, list) and records, "verification records are incomplete")
+    for record in records:
+        output = record.get("output", {})
+        require(set(record) == {"command", "expected", "output"} and isinstance(record["command"], list) and record["command"] and all(isinstance(value, str) and value.strip() for value in record["command"]) and record["expected"] in {"pass", "fail", "unavailable"} and set(output) == {"scope", "path", "sha256"} and output["scope"] in {"repository", "artifact"} and HEX.fullmatch(output["sha256"]) and output["sha256"] != "0" * 64, "verification records are incomplete")
+        root = repository if output["scope"] == "repository" else artifact
+        require(root is not None and sha(safe_path(root, output["path"])) == output["sha256"], "verification output evidence differs")
+
+def status_records(records):
+    require(isinstance(records, list) and records and all(set(item) == {"status", "code", "detail"} and item["status"] in {"pending", "unknown", "deferred", "not_applicable"} and re.fullmatch(r"[a-z][a-z0-9-]{2,63}", item["code"]) and item["detail"].strip().lower() not in {"none", "all facts known"} for item in records), "unknowns or limitations are invalid")
+    return any(item["status"] in {"pending", "unknown"} for item in records)
 
 def validate(receipt, root=ROOT, artifact_root=None, state=None, accept_historical=False, fixture=False):
     required = {"schema_version", "classification", "git", "source_pins", "patches", "build", "configuration", "artifact", "service_policy", "verification", "unknowns", "limitations", "claims", "approval"}
@@ -104,9 +118,8 @@ def validate(receipt, root=ROOT, artifact_root=None, state=None, accept_historic
         timestamp = datetime.fromtimestamp(binary.stat().st_mtime, timezone.utc).isoformat().replace("+00:00", "Z")
         require((sha(binary), binary.stat().st_size, sha(ini), sha(config), timestamp) == (artifact["sha256"], artifact["size"], manifest["sha256"], artifact["configuration"]["sha256"], artifact["timestamp"]), "artifact hash, size, manifest, configuration, or timestamp differs")
         require(parser["App"].get("Name") == IDENTITY["app"] and parser["App"].get("Version") == artifact["version"] and generated == {"identity": IDENTITY, "version": artifact["version"]}, "application version or generated identity differs")
-    checks = receipt["verification"]
-    require(isinstance(checks, list) and checks and all(set(check) == {"command", "result", "output_sha256"} and isinstance(check["command"], list) and check["command"] and all(isinstance(value, str) and value.strip() for value in check["command"]) and isinstance(check["result"], str) and check["result"].strip() and HEX.fullmatch(check["output_sha256"]) for check in checks), "verification records are incomplete")
-    require(isinstance(receipt["unknowns"], list) and receipt["unknowns"] and all(isinstance(value, str) and value.strip() for value in receipt["unknowns"]) and isinstance(receipt["limitations"], list) and receipt["limitations"] and all(isinstance(value, str) and value.strip() for value in receipt["limitations"]) and receipt["approval"] == {"status": "pending-independent-review", "reviewer": None}, "receipt self-approval, unknowns, or limitations are invalid")
+    evidence_records(receipt["verification"], root, artifact_root)
+    require(status_records(receipt["unknowns"]) and status_records(receipt["limitations"]) and receipt["approval"] == {"status": "pending-independent-review", "reviewer": None}, "receipt self-approval, unknowns, or limitations are invalid")
 
 def main():
     parser = argparse.ArgumentParser(); parser.add_argument("receipt"); parser.add_argument("--artifact-root"); parser.add_argument("--allow-historical", action="store_true")
