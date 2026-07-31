@@ -53,6 +53,7 @@ class BootstrapContractTests(unittest.TestCase):
     def test_mozconfig_selects_mail_and_an_in_tree_object_directory(self):
         text = (ROOT / "config" / "mozconfig-pilot").read_text(encoding="utf-8")
         self.assertIn("ac_add_options --enable-project=comm/mail", text)
+        self.assertIn("ac_add_options --disable-lto", text)
         self.assertIn("MOZ_OBJDIR=@TOPSRCDIR@/obj-mindy-pilot", text)
 
     def test_verify_mvp_bootstrap_runs_the_focused_contract(self):
