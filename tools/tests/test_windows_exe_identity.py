@@ -57,6 +57,10 @@ def fixture_source(root):
 
 
 class WindowsExeIdentityTests(unittest.TestCase):
+    def test_manifest_preimage_is_pinned_to_lf(self):
+        attributes = (ROOT / ".gitattributes").read_text(encoding="utf-8").splitlines()
+        self.assertIn("tools/tests/fixtures/0006-thunderbird.exe.manifest-preimage text eol=lf", attributes)
+
     def test_canonical_series_patch_and_fixture_hashes_are_exact(self):
         names = tuple(line.split("#", 1)[0].strip() for line in (ROOT / "patches" / "series").read_text(encoding="utf-8").splitlines() if line.split("#", 1)[0].strip())
         validate(PATCH.read_bytes(), names)
