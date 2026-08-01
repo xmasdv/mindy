@@ -1,0 +1,241 @@
+diff --git a/comm/mail/moz.configure b/comm/mail/moz.configure
+--- a/comm/mail/moz.configure
++++ b/comm/mail/moz.configure
+@@ -24,6 +24,8 @@
+ imply_option("--enable-update-channel", "mindy-dev")
+ # Mindy has no updater service; do not emit update configuration.
+ imply_option("--enable-updater", False)
++# Mindy has no crash-reporting endpoint; omit crashreporter packaging.
++imply_option("--enable-crashreporter", False)
+ 
+ imply_option("--enable-default-browser-agent", False)
+ imply_option("MOZ_REQUIRE_SIGNING", False)
+@@ -69,7 +71,8 @@
+ 
+ 
+ imply_option("MOZ_PLACES", True)
+-imply_option("MOZ_SERVICES_HEALTHREPORT", True)
++imply_option("MOZ_SERVICES_HEALTHREPORT", False)
++imply_option("MOZ_TELEMETRY_REPORTING", False)
+ imply_option("MOZ_DEDICATED_PROFILES", True)
+ imply_option("MOZ_BLOCK_PROFILE_DOWNGRADE", True)
+ imply_option("MOZ_PROFILE_MIGRATOR", True)
+diff --git a/comm/mail/app/profile/all-thunderbird.js b/comm/mail/app/profile/all-thunderbird.js
+--- a/comm/mail/app/profile/all-thunderbird.js
++++ b/comm/mail/app/profile/all-thunderbird.js
+@@ -100,9 +100,9 @@
+ // should no longer be used directly. Instead, getAppUpdateAutoEnabled and
+ // getAppUpdateAutoEnabled from UpdateUtils.sys.mjs should be used.
+ #ifndef XP_WIN
+- pref("app.update.auto", true);
++ pref("app.update.auto", false);
+ #endif
+ 
+ // If set to true, the Update Service will apply updates in the background
+ // when it finishes downloading them.
+-pref("app.update.staging.enabled", true);
++pref("app.update.staging.enabled", false);
+@@ -116,14 +116,14 @@
+ // Whether or not to attempt using the service for updates.
+ #ifdef MOZ_MAINTENANCE_SERVICE
+-pref("app.update.service.enabled", true);
++pref("app.update.service.enabled", false);
+ #endif
+ 
+ #ifdef MOZ_BITS_DOWNLOAD
+   // If set to true, the Update Service will attempt to use Windows BITS to
+   // download updates and will fallback to downloading internally if that fails.
+-  pref("app.update.BITS.enabled", true);
++  pref("app.update.BITS.enabled", false);
+ #endif
+ 
+-pref("app.update.langpack.enabled", true);
++pref("app.update.langpack.enabled", false);
+ 
+ #if defined(MOZ_UPDATE_AGENT)
+@@ -150,6 +150,6 @@
+ #endif
+ 
+ // Release notes URL
+-pref("app.releaseNotesURL", "https://live.thunderbird.net/%APP%/releasenotes?locale=%LOCALE%&version=%VERSION%&channel=%CHANNEL%&os=%OS%&buildid=%APPBUILDID%");
++pref("app.releaseNotesURL", "");
+ 
+ #ifdef XP_MACOSX
+@@ -162,25 +162,25 @@
+ 
+ // URL for "Learn More" for DataCollection
+ pref("toolkit.datacollection.infoURL",
+-     "https://www.mozilla.org/thunderbird/legal/privacy/#telemetry");
++     "");
+ 
+ // URL for "Learn More" for Crash Reporter.
+ pref("toolkit.crashreporter.infoURL",
+-     "https://www.mozilla.org/thunderbird/legal/privacy/#crash-reporter");
++     "");
+ 
+-pref("datareporting.healthreport.uploadEnabled", true); // Required to enable telemetry pings.
+-pref("datareporting.healthreport.infoURL", "https://www.mozilla.org/thunderbird/legal/privacy/#health-report");
++pref("datareporting.healthreport.uploadEnabled", false);
++pref("datareporting.healthreport.infoURL", "");
+ 
+ #ifdef MOZ_DATA_REPORTING
+-pref("datareporting.policy.dataSubmissionEnabled", true);
++pref("datareporting.policy.dataSubmissionEnabled", false);
+ pref("datareporting.policy.dataSubmissionPolicyAcceptedVersion", 0);
+-pref("datareporting.policy.dataSubmissionPolicyBypassNotification", false);
++pref("datareporting.policy.dataSubmissionPolicyBypassNotification", true);
+ pref("datareporting.policy.currentPolicyVersion", 2);
+-pref("datareporting.policy.firstRunURL", "https://www.mozilla.org/thunderbird/legal/privacy/");
++pref("datareporting.policy.firstRunURL", "");
+ #endif
+ 
+ // Base URL for web-based support pages.
+-pref("app.support.baseURL", "https://support.thunderbird.net/%APP%/%VERSION%/%OS%/%LOCALE%/");
++pref("app.support.baseURL", "");
+ 
+ // Base url for web-based feedback pages.
+-pref("app.feedback.baseURL", "https://connect.mozilla.org/");
++pref("app.feedback.baseURL", "");
+@@ -215,7 +215,7 @@
+ #endif
+ 
+-pref("extensions.update.autoUpdateDefault", true);
++pref("extensions.update.autoUpdateDefault", false);
+ 
+-pref("extensions.systemAddon.update.enabled", true);  // See bug 1462160.
++pref("extensions.systemAddon.update.enabled", false);  // See bug 1462160.
+ 
+ // Disable add-ons installed into the shared user and shared system areas by
+@@ -231,24 +231,24 @@
+ pref("extensions.geckoProfiler.acceptedExtensionIds", "geckoprofiler@mozilla.com,quantum-foxfooding@mozilla.com,raptor@mozilla.org");
+ 
+ // Preferences for AMO integration
+-pref("extensions.getAddons.cache.enabled", true);
++pref("extensions.getAddons.cache.enabled", false);
+ pref("extensions.getAddons.maxResults", 15);
+-pref("extensions.getAddons.get.url", "https://services.addons.thunderbird.net/api/v3/addons/search/?guid=%IDS%&lang=%LOCALE%");
+-pref("extensions.getAddons.compatOverides.url", "https://services.addons.thunderbird.net/api/v3/addons/compat-override/?guid=%IDS%&lang=%LOCALE%");
+-pref("extensions.getAddons.link.url", "https://addons.thunderbird.net/%LOCALE%/%APP%/");
+-pref("browser.dictionaries.download.url", "https://addons.thunderbird.net/%LOCALE%/%APP%/language-tools/");
+-pref("extensions.getAddons.recommended.url", "https://services.addons.thunderbird.net/%LOCALE%/%APP%/api/%API_VERSION%/list/recommended/all/%MAX_RESULTS%/%OS%/%VERSION%?src=thunderbird");
+-pref("extensions.getAddons.search.browseURL", "https://addons.thunderbird.net/%LOCALE%/%APP%/search/?q=%TERMS%&appver=%VERSION%&platform=%OS%");
+-pref("extensions.getAddons.search.url", "https://services.addons.thunderbird.net/%LOCALE%/%APP%/api/%API_VERSION%/search/%TERMS%/all/%MAX_RESULTS%/%OS%/%VERSION%/%COMPATIBILITY_MODE%?src=thunderbird");
+-pref("extensions.webservice.discoverURL", "https://services.addons.thunderbird.net/%LOCALE%/%APP%/discovery/pane/%VERSION%/%OS%");
+-pref("extensions.getAddons.langpacks.url", "https://services.addons.thunderbird.net/api/v3/addons/language-tools/?app=thunderbird&type=language&appversion=%VERSION%");
+-pref("extensions.getAddons.discovery.api_url", "https://services.addons.thunderbird.net/api/v4/discovery/?lang=%LOCALE%&edition=%DISTRIBUTION%");
++pref("extensions.getAddons.get.url", "");
++pref("extensions.getAddons.compatOverides.url", "");
++pref("extensions.getAddons.link.url", "");
++pref("browser.dictionaries.download.url", "");
++pref("extensions.getAddons.recommended.url", "");
++pref("extensions.getAddons.search.browseURL", "");
++pref("extensions.getAddons.search.url", "");
++pref("extensions.webservice.discoverURL", "");
++pref("extensions.getAddons.langpacks.url", "");
++pref("extensions.getAddons.discovery.api_url", "");
+ 
+ // Blocklist preferences
+-pref("extensions.blocklist.detailsURL", "https://blocked.cdn.mozilla.net/");
+-pref("extensions.blocklist.itemURL", "https://blocked.cdn.mozilla.net/%blockID%.html");
++pref("extensions.blocklist.detailsURL", "");
++pref("extensions.blocklist.itemURL", "");
+ 
+ // Remote settings preferences
+-pref("services.settings.server", "https://thunderbird-settings.thunderbird.net/v1");
+-pref("services.settings.default_bucket", "thunderbird");
++pref("services.settings.server", "");
++pref("services.settings.default_bucket", "");
+ pref("security.content.signature.root_hash", "[CONTENT SIGNING DISABLED - see bug 1612380]");
+@@ -286,8 +286,8 @@
+ //  .. etc ..
+ //
+-pref("extensions.update.enabled", true);
+-pref("extensions.update.url", "https://versioncheck.addons.thunderbird.net/update/VersionCheck.php?reqVersion=%REQ_VERSION%&id=%ITEM_ID%&version=%ITEM_VERSION%&maxAppVersion=%ITEM_MAXAPPVERSION%&status=%ITEM_STATUS%&appID=%APP_ID%&appVersion=%APP_VERSION%&appOS=%APP_OS%&appABI=%APP_ABI%&locale=%APP_LOCALE%&currentAppVersion=%CURRENT_APP_VERSION%&updateType=%UPDATE_TYPE%&compatMode=%COMPATIBILITY_MODE%");
++pref("extensions.update.enabled", false);
++pref("extensions.update.url", "");
+ 
+-pref("extensions.update.background.url", "https://versioncheck-bg.addons.thunderbird.net/update/VersionCheck.php?reqVersion=%REQ_VERSION%&id=%ITEM_ID%&version=%ITEM_VERSION%&maxAppVersion=%ITEM_MAXAPPVERSION%&status=%ITEM_STATUS%&appID=%APP_ID%&appVersion=%APP_VERSION%&appOS=%APP_OS%&appABI=%APP_ABI%&locale=%APP_LOCALE%&currentAppVersion=%CURRENT_APP_VERSION%&updateType=%UPDATE_TYPE%&compatMode=%COMPATIBILITY_MODE%");
++pref("extensions.update.background.url", "");
+ 
+ pref("extensions.update.interval", 86400);  // Check for updates to Extensions and
+@@ -302,9 +302,9 @@
+ pref("extensions.webextensions.restrictedDomains", "accounts-static.cdn.mozilla.net,accounts.firefox.com,addons.cdn.mozilla.net,addons.mozilla.org,api.accounts.firefox.com,content.cdn.mozilla.net,discovery.addons.mozilla.org,install.mozilla.org,oauth.accounts.firefox.com,profile.accounts.firefox.com,support.mozilla.org,sync.services.mozilla.com,addons.thunderbird.net");
+ 
+ // Define Thunderbird specific add-on related URLs (not used in toolkit code).
+-pref("extensions.canonicalAddonServer.url", "https://addons.thunderbird.net");
+-pref("extensions.alternativeAddonSearch.url", "https://extension-finder.thunderbird.net");
++pref("extensions.canonicalAddonServer.url", "");
++pref("extensions.alternativeAddonSearch.url", "");
+ 
+-pref("lightweightThemes.update.enabled", true);
++pref("lightweightThemes.update.enabled", false);
+ 
+ // Use for in-content pages the theme's toolbar color scheme when none is set in the theme.
+@@ -559,6 +559,6 @@
+ 
+ pref("spellchecker.dictionary", "");
+ // Dictionary download preference
+-pref("spellchecker.dictionaries.download.url", "https://addons.thunderbird.net/%LOCALE%/%APP%/dictionaries/");
++pref("spellchecker.dictionaries.download.url", "");
+ 
+ // prefs to control the mail alert notification
+@@ -574,6 +574,6 @@
+ pref("mail.phishing.detection.enabled", true);
+ pref("mail.phishing.detection.disallow_form_actions", true);
+ 
+-pref("browser.safebrowsing.reportPhishURL", "https://%LOCALE%.phish-report.mozilla.com/?hl=%LOCALE%");
++pref("browser.safebrowsing.reportPhishURL", "");
+ 
+ // prevent status-bar spoofing even if people are foolish enough to turn on JS
+@@ -598,6 +598,6 @@
+ pref("mail.tabs.drawInTitlebar", true);
+ 
+ // The breakpad report server to link to in about:crashes
+-pref("breakpad.reportURL", "https://crash-stats.mozilla.com/report/index/");
++pref("breakpad.reportURL", "");
+ 
+ // OS Integrated Search and Indexing
+@@ -1341,26 +1341,26 @@
+ // Telemetry settings.
+ 
+ // Server to submit telemetry pings to.
+-pref("toolkit.telemetry.server", "https://incoming-telemetry.thunderbird.net");
+-pref("toolkit.telemetry.server_owner", "Thunderbird");
++pref("toolkit.telemetry.server", "");
++pref("toolkit.telemetry.server_owner", "");
+ 
+ // Determines if Telemetry pings can be archived locally.
+-pref("toolkit.telemetry.archive.enabled", true);
++pref("toolkit.telemetry.archive.enabled", false);
+ // Enables sending the shutdown ping when Thunderbird shuts down.
+-pref("toolkit.telemetry.shutdownPingSender.enabled", true);
++pref("toolkit.telemetry.shutdownPingSender.enabled", false);
+ // Enables sending the shutdown ping using the pingsender from the first session.
+ pref("toolkit.telemetry.shutdownPingSender.enabledFirstSession", false);
+ // Enables sending a duplicate of the first shutdown ping from the first session.
+-pref("toolkit.telemetry.firstShutdownPing.enabled", true);
++pref("toolkit.telemetry.firstShutdownPing.enabled", false);
+ // Enables sending the 'new-profile' ping on new profiles.
+-pref("toolkit.telemetry.newProfilePing.enabled", true);
++pref("toolkit.telemetry.newProfilePing.enabled", false);
+ // Enables sending 'update' pings on Thunderbird updates.
+-pref("toolkit.telemetry.updatePing.enabled", true);
++pref("toolkit.telemetry.updatePing.enabled", false);
+ // Enables sending 'bhr' pings when the app hangs.
+-pref("toolkit.telemetry.bhrPing.enabled", true);
++pref("toolkit.telemetry.bhrPing.enabled", false);
+ // Whether to enable Ecosystem Telemetry, requires a restart.
+ #ifdef NIGHTLY_BUILD
+-  pref("toolkit.telemetry.ecosystemtelemetry.enabled", true);
++  pref("toolkit.telemetry.ecosystemtelemetry.enabled", false);
+ #else
+   pref("toolkit.telemetry.ecosystemtelemetry.enabled", false);
+ #endif
+@@ -1372,6 +1372,6 @@
+ pref("prompts.defaultModalType", 3);
+ 
+ // The URL for the privacy policy related to recommended extensions.
+-pref("extensions.recommendations.privacyPolicyUrl", "https://www.mozilla.org/en-US/privacy/thunderbird/#addons");
++pref("extensions.recommendations.privacyPolicyUrl", "");
+ 
+ // Used by pdf.js to know the first time Thunderbird is run with it installed
