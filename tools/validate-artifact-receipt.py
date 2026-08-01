@@ -12,6 +12,27 @@ CLAIMS = {"clean-source", "no-owned-service-endpoints", "lto-disabled"}
 PENDING_CODES = {"runtime_validation_pending", "provider_validation_pending", "native_validation_pending", "release_policy_pending", "artifact_not_release"}
 POLICY = "docs/MINDY-IDENTITY-AND-SERVICES.md"
 REMOTE = "https://github.com/xmasdv/mindy.git"
+DENIED_NATIVE_SERVICE_TOKENS = (
+    "mozilla.com",
+    "mozilla.net",
+    "thunderbird.net",
+    "crash-reports.mozilla.com",
+    "crash-stats.mozilla.com",
+    "incoming-telemetry.thunderbird.net",
+    "www.mozilla.org/thunderbird/legal/privacy",
+    "www.mozilla.org/en-US/privacy/thunderbird",
+    "live.thunderbird.net",
+    "support.thunderbird.net",
+    "connect.mozilla.org",
+    "services.addons.thunderbird.net",
+    "addons.thunderbird.net",
+    "versioncheck.addons.thunderbird.net",
+    "versioncheck-bg.addons.thunderbird.net",
+    "extension-finder.thunderbird.net",
+    "blocked.cdn.mozilla.net",
+    "thunderbird-settings.thunderbird.net",
+    "phish-report.mozilla.com",
+)
 
 class ReceiptError(ValueError): pass
 
@@ -76,6 +97,21 @@ def status_records(records):
     require(isinstance(records, list) and records and all(set(item) == {"status", "code", "detail"} and item["status"] in {"pending", "unknown"} and item["code"] in PENDING_CODES and isinstance(item["detail"], str) and len(item["detail"].strip()) >= 12 and not re.search(r"\b(complet(?:e(?:d)?|ion)|proven|accepted|all facts known|none)\b", item["detail"], re.I) for item in records), "unknowns or limitations are invalid")
     return True
 
+def native_service_policy(ini):
+    parser = configparser.ConfigParser(); parser.read(ini, encoding="utf-8")
+    if parser.has_section("Crash Reporter"):
+        require(not parser["Crash Reporter"].get("ServerURL", "").strip(), "crash reporter ServerURL rejected")
+    require(not (ini.parent / "crashreporter-override.ini").exists(), "packaged crash reporter override rejected")
+    roots = [ini.parent / "defaults" / "pref", ini.parent / "defaults" / "preferences", ini.parent / "chrome"]
+    for root in roots:
+        if not root.exists():
+            continue
+        files = [root] if root.is_file() else [path for path in root.rglob("*") if path.is_file() and path.suffix.lower() in {".js", ".jsm", ".mjs", ".json", ".properties", ".ftl", ".xhtml", ".html"}]
+        for path in files:
+            text = path.read_text(encoding="utf-8", errors="ignore").lower()
+            urls = re.findall(r"https?://[^\s\"')<>]+", text)
+            require(not any(token.lower() in url for token in DENIED_NATIVE_SERVICE_TOKENS for url in urls), "denied native service endpoint rejected")
+
 def validate(receipt, root=ROOT, artifact_root=None, state=None, accept_historical=False, fixture=False):
     required = {"schema_version", "classification", "git", "source_pins", "patches", "build", "configuration", "artifact", "service_policy", "verification", "unknowns", "limitations", "claims", "approval"}
     require(set(receipt) == required and receipt["schema_version"] == 1, "receipt schema is incomplete")
@@ -124,6 +160,7 @@ def validate(receipt, root=ROOT, artifact_root=None, state=None, accept_historic
         timestamp = datetime.fromtimestamp(binary.stat().st_mtime, timezone.utc).isoformat().replace("+00:00", "Z")
         require((sha(binary), binary.stat().st_size, sha(ini), sha(config), timestamp) == (artifact["sha256"], artifact["size"], manifest["sha256"], artifact["configuration"]["sha256"], artifact["timestamp"]), "artifact hash, size, manifest, configuration, or timestamp differs")
         require(parser["App"].get("Name") == IDENTITY["app"] and parser["App"].get("Version") == artifact["version"] and generated == {"identity": IDENTITY, "version": artifact["version"]}, "application version or generated identity differs")
+        native_service_policy(ini)
     evidence_records(receipt["verification"], root, artifact_root)
     require(status_records(receipt["unknowns"]) and status_records(receipt["limitations"]) and receipt["approval"] == {"status": "pending-independent-review", "reviewer": None}, "receipt self-approval, unknowns, or limitations are invalid")
 

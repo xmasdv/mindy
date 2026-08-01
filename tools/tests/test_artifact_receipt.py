@@ -45,6 +45,18 @@ class ArtifactReceiptTests(unittest.TestCase):
         with self.assertRaisesRegex(v.ReceiptError, "application version or generated identity"): self.check(receipt)
         self.write_output(); receipt = self.receipt("canonical"); receipt["configuration"]["app"] = "Thunderbird"
         with self.assertRaisesRegex(v.ReceiptError, "generated configuration identity"): self.check(receipt)
+    def test_rejects_native_crash_and_service_policy_leaks(self):
+        receipt = self.receipt("canonical"); ini = self.artifacts / "dist/application.ini"
+        ini.write_text("[App]\nName=Mindy\nVersion=0\n[Crash Reporter]\nServerURL=https://crash-reports.mozilla.com/submit\n", encoding="utf-8"); receipt["artifact"]["manifest"]["sha256"] = v.sha(ini)
+        with self.assertRaisesRegex(v.ReceiptError, "crash reporter ServerURL"): self.check(receipt)
+        self.write_output(); receipt = self.receipt("canonical"); (self.artifacts / "dist/crashreporter-override.ini").write_text("ServerURL=https://crash-reports.mozilla.com/submit\n", encoding="utf-8")
+        with self.assertRaisesRegex(v.ReceiptError, "crash reporter override"): self.check(receipt)
+        (self.artifacts / "dist/crashreporter-override.ini").unlink(); prefs = self.artifacts / "dist/defaults/pref/all-thunderbird.js"; prefs.parent.mkdir(parents=True); prefs.write_text('pref("toolkit.telemetry.server", "https://incoming-telemetry.thunderbird.net");\n', encoding="utf-8")
+        with self.assertRaisesRegex(v.ReceiptError, "denied native service endpoint"): self.check(receipt)
+        prefs.write_text('pref("extensions.webextensions.restrictedDomains", "addons.thunderbird.net,support.mozilla.org");\n', encoding="utf-8")
+        self.check(receipt)
+        prefs.write_text('pref("x", "https://services.mozilla.com/");\n', encoding="utf-8")
+        with self.assertRaisesRegex(v.ReceiptError, "denied native service endpoint"): self.check(receipt)
     def test_rejects_platform_traversal_links_and_resolved_escape(self):
         for value in ("../sources.lock", r"..\sources.lock", r"C:\sources.lock", r"\\server\share"):
             receipt = self.receipt(); receipt["source_pins"]["lock_path"] = value

@@ -17,6 +17,7 @@ SERIES = (
     ("0004-mindy-identity-namespace.patch", "98ff34214761441f557ebbe1247036d3f0da37f7ba7f9ecc8e5d213c4859f013"),
     ("0005-mindy-branding-package.patch", "d829b482041c149a1e30efbddc65d32c31ba9e79de6dd3b39a237ae6123cff3c"),
     ("0006-mindy-windows-exe-identity.patch", "940af9eae5ed67689284aa2cb486c1f38c784eba28670256ebe4d0330febfe08"),
+    ("0007-mindy-service-policy-baseline.patch", "e7979f19563fef404e744d1702b4a6e822bddd17ada235ce2ad73b18ac516420"),
 )
 
 
