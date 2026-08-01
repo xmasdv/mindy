@@ -23,7 +23,7 @@ diff --git a/comm/mail/moz.configure b/comm/mail/moz.configure
 diff --git a/comm/mail/app/profile/all-thunderbird.js b/comm/mail/app/profile/all-thunderbird.js
 --- a/comm/mail/app/profile/all-thunderbird.js
 +++ b/comm/mail/app/profile/all-thunderbird.js
-@@ -100,9 +100,9 @@
+@@ -100,12 +100,12 @@ pref("app.update.notifyDuringDownload", false);
  // should no longer be used directly. Instead, getAppUpdateAutoEnabled and
  // getAppUpdateAutoEnabled from UpdateUtils.sys.mjs should be used.
  #ifndef XP_WIN
@@ -35,6 +35,9 @@ diff --git a/comm/mail/app/profile/all-thunderbird.js b/comm/mail/app/profile/al
  // when it finishes downloading them.
 -pref("app.update.staging.enabled", true);
 +pref("app.update.staging.enabled", false);
+ 
+ // Update service URL:
+ // app.update.url was removed in Bug 1630041
 @@ -116,14 +116,14 @@
  // Whether or not to attempt using the service for updates.
  #ifdef MOZ_MAINTENANCE_SERVICE
@@ -61,7 +64,7 @@ diff --git a/comm/mail/app/profile/all-thunderbird.js b/comm/mail/app/profile/al
 +pref("app.releaseNotesURL", "");
  
  #ifdef XP_MACOSX
-@@ -162,25 +162,25 @@
+@@ -163,28 +163,28 @@ pref("app.releaseNotesURL", "https://live.thunderbird.net/%APP%/releasenotes?loc
  
  // URL for "Learn More" for DataCollection
  pref("toolkit.datacollection.infoURL",
@@ -96,6 +99,9 @@ diff --git a/comm/mail/app/profile/all-thunderbird.js b/comm/mail/app/profile/al
  // Base url for web-based feedback pages.
 -pref("app.feedback.baseURL", "https://connect.mozilla.org/");
 +pref("app.feedback.baseURL", "");
+ 
+ // Allows using Thundebird without a configured email account, blocking the
+ // account setup prompt at startup.
 @@ -215,7 +215,7 @@
  #endif
  
