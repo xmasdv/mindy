@@ -117,5 +117,37 @@ class BootstrapContractTests(unittest.TestCase):
         self.module.cleanup_created_clone(self.destination, self.vendor)
         self.assertFalse(self.destination.exists())
 
+    def test_apply_patches_checks_and_applies_each_patch_in_series_order(self):
+        commands = []
+        lock = {"layout": {}}
+        comm = self.root / "vendor" / "gecko" / "comm"
+
+        def record(command, **kwargs):
+            commands.append((command, kwargs.get("cwd")))
+
+        with (
+            mock.patch.object(self.module, "verify_checkout") as verify_checkout,
+            mock.patch.object(
+                self.module, "read_series", return_value=["0004.patch", "0007.patch"]
+            ),
+            mock.patch.object(self.module.shutil, "which", return_value="git"),
+            mock.patch.object(self.module, "run", side_effect=record),
+            mock.patch.object(self.module, "paths", return_value=(self.destination, comm)),
+            mock.patch.object(self.module, "copy_branding_overlay") as copy_branding_overlay,
+        ):
+            self.module.apply_patches(lock)
+
+        verify_checkout.assert_called_once_with(lock)
+        self.assertEqual(
+            commands,
+            [
+                (["git", "apply", "--directory=vendor/gecko", "--check", "0004.patch"], ROOT),
+                (["git", "apply", "--directory=vendor/gecko", "0004.patch"], ROOT),
+                (["git", "apply", "--directory=vendor/gecko", "--check", "0007.patch"], ROOT),
+                (["git", "apply", "--directory=vendor/gecko", "0007.patch"], ROOT),
+            ],
+        )
+        copy_branding_overlay.assert_called_once_with(comm)
+
 if __name__ == "__main__":
     unittest.main()
