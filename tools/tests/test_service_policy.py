@@ -9,7 +9,25 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 PATCH = ROOT / "patches" / "0007-mindy-service-policy-baseline.patch"
 MOZ_FIXTURE = ROOT / "tools/tests/fixtures/0004-moz.configure-preimage"
-APPROVED_TARGETS = ("comm/mail/moz.configure", "comm/mail/app/profile/all-thunderbird.js", "comm/mailnews/mailnews.js")
+APPROVED_TARGETS = (
+    "comm/mail/moz.configure",
+    "comm/mail/app/profile/all-thunderbird.js",
+    "comm/mailnews/mailnews.js",
+    "toolkit/content/aboutTelemetry.js",
+    "comm/mail/base/content/aboutDialog.xhtml",
+    "comm/mail/base/content/aboutRights.xhtml",
+    "comm/mail/base/content/buildconfig.html",
+    "comm/mail/base/content/overrides/app-license.html",
+    "comm/mail/base/content/messenger.xhtml",
+    "comm/mailnews/base/content/msgAccountCentral.xhtml",
+    "comm/mail/components/preferences/compose.inc.xhtml",
+    "comm/mail/components/preferences/qrExport.inc.xhtml",
+    "comm/mail/components/preferences/privacy.inc.xhtml",
+    "comm/mail/base/content/utilityOverlay.js",
+    "devtools/server/actors/inspector/event-collector.js",
+    "devtools/server/actors/utils/inactive-property-helper.js",
+    "devtools/client/shared/stylesheet-utils.js",
+)
 ACCOUNT_PREFS = (
     "identity.fxaccounts.autoconfig.uri",
     "identity.fxaccounts.remote.root",
@@ -87,6 +105,19 @@ class ServicePolicyTests(unittest.TestCase):
                 self.assertIn(value, self.added)
         self.assertNotIn('pref("extensions.webextensions.restrictedDomains", "");', self.added)
         self.assertNotIn("extensions.webextensions.restrictedDomains", changed_pref_names(self.patch))
+
+    def test_patch_neutralizes_packaged_chrome_resource_endpoints(self):
+        for value in (
+            'const DEFAULT_SYMBOL_SERVER_URI = "";',
+            "img-src chrome: data: moz-icon:; connect-src *",
+            'origin: "",',
+            "// about this in the related design discussion and",
+            "// See Bug 1582786 for context.",
+        ):
+            with self.subTest(value=value):
+                self.assertIn(value, self.added)
+        self.assertGreaterEqual(self.added.count('href=""'), 12)
+        self.assertGreaterEqual(self.added.count('openUILink("", event);'), 5)
 
     def test_patch_does_not_modify_account_setup_autoconfig_or_oauth_prefs(self):
         changed = changed_pref_names(self.patch)
