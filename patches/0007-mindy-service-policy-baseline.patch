@@ -490,7 +490,6 @@ diff --git a/devtools/server/actors/utils/inactive-property-helper.js b/devtools
 +++ b/devtools/server/actors/utils/inactive-property-helper.js
 @@ -445,7 +445,7 @@
        // impossible for the JS code to determine whether the type of box would support
-       // impossible for the JS code to determine whether the type of box would support
        // text-overflow. So, rather than risking to show invalid warnings, we decided to
        // only warn when 'overflow-inline: visible' was set. There is more information
 -      // about this in this discussion https://phabricator.services.mozilla.com/D62407 and
@@ -502,7 +501,6 @@ diff --git a/devtools/client/shared/stylesheet-utils.js b/devtools/client/shared
 --- a/devtools/client/shared/stylesheet-utils.js
 +++ b/devtools/client/shared/stylesheet-utils.js
 @@ -38,7 +38,7 @@
-   //   global.css
    //   global.css
    //   *-theme.css (the file loaded here)
    //   document-specific-sheet.css
