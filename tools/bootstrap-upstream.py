@@ -231,8 +231,9 @@ def apply_patches(lock):
         git = shutil.which("git")
         if not git:
             raise RuntimeError("git is required to apply the ordered patch series")
-        run([git, "apply", "--directory=vendor/gecko", "--check", *patch_files], cwd=ROOT)
-        run([git, "apply", "--directory=vendor/gecko", *patch_files], cwd=ROOT)
+        for patch_file in patch_files:
+            run([git, "apply", "--directory=vendor/gecko", "--check", patch_file], cwd=ROOT)
+            run([git, "apply", "--directory=vendor/gecko", patch_file], cwd=ROOT)
         copy_branding_overlay(paths(lock)[1])
 
 def build_pilot(lock):
