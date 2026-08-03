@@ -113,7 +113,8 @@ diff --git a/comm/mail/app/profile/all-thunderbird.js b/comm/mail/app/profile/al
  
  // Disable add-ons installed into the shared user and shared system areas by
 @@ -231,24 +231,24 @@
- pref("extensions.geckoProfiler.acceptedExtensionIds", "geckoprofiler@mozilla.com,quantum-foxfooding@mozilla.com,raptor@mozilla.org");
+-pref("extensions.geckoProfiler.acceptedExtensionIds", "geckoprofiler@mozilla.com,quantum-foxfooding@mozilla.com,raptor@mozilla.org");
++pref("extensions.geckoProfiler.acceptedExtensionIds", "");
  
  // Preferences for AMO integration
 -pref("extensions.getAddons.cache.enabled", true);
@@ -201,6 +202,21 @@ diff --git a/comm/mail/app/profile/all-thunderbird.js b/comm/mail/app/profile/al
 +pref("breakpad.reportURL", "");
  
  // OS Integrated Search and Indexing
+@@ -867,12 +867,12 @@
+ pref("chat.otr.default.allowMsgLog", true);
+ 
+ // BigFiles
+ pref("mail.cloud_files.enabled", true);
+-pref("mail.cloud_files.learn_more_url", "https://support.thunderbird.net/kb/filelink-large-attachments");
++pref("mail.cloud_files.learn_more_url", "");
+ 
+ // Ignore threads
+-pref("mail.ignore_thread.learn_more_url", "https://support.thunderbird.net/kb/ignore-threads");
++pref("mail.ignore_thread.learn_more_url", "");
+ 
+ // Density control for the entire Thunderbird UI.
+ // The possible values are 0=compact, 1=normal, 2=touch.
+ pref("mail.uidensity", 1);
 @@ -1341,26 +1341,26 @@
  // Telemetry settings.
  
@@ -245,3 +261,19 @@ diff --git a/comm/mail/app/profile/all-thunderbird.js b/comm/mail/app/profile/al
 +pref("extensions.recommendations.privacyPolicyUrl", "");
  
  // Used by pdf.js to know the first time Thunderbird is run with it installed
+diff --git a/comm/mailnews/mailnews.js b/comm/mailnews/mailnews.js
+--- a/comm/mailnews/mailnews.js
++++ b/comm/mailnews/mailnews.js
+@@ -1008,10 +1008,10 @@ pref("mailnews.emptyJunk.dontAskAgain", false);
+ pref("mailnews.emptyTrash.dontAskAgain", false);
+ 
+ // where to fetch auto config information from.
+-pref("mailnews.auto_config_url", "https://live.thunderbird.net/autoconfig/v1.1/");
++pref("mailnews.auto_config_url", "");
+ // The list of addons which can handle certain account types
+-pref("mailnews.auto_config.addons_url", "https://live.thunderbird.net/autoconfig/addons.json");
++pref("mailnews.auto_config.addons_url", "");
+ // Allow to contact the ISP (email address domain).
+ // This may happen via insecure means (HTTP) susceptible to eavesdropping
+ // and MitM (see mailnews.auto_config.fetchFromISP.sslOnly below).
+ pref("mailnews.auto_config.fetchFromISP.enabled", true);
