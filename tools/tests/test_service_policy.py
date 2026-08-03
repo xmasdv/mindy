@@ -9,7 +9,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 PATCH = ROOT / "patches" / "0007-mindy-service-policy-baseline.patch"
 MOZ_FIXTURE = ROOT / "tools/tests/fixtures/0004-moz.configure-preimage"
-APPROVED_TARGETS = ("comm/mail/moz.configure", "comm/mail/app/profile/all-thunderbird.js")
+APPROVED_TARGETS = ("comm/mail/moz.configure", "comm/mail/app/profile/all-thunderbird.js", "comm/mailnews/mailnews.js")
 ACCOUNT_PREFS = (
     "identity.fxaccounts.autoconfig.uri",
     "identity.fxaccounts.remote.root",
@@ -74,6 +74,19 @@ class ServicePolicyTests(unittest.TestCase):
         ):
             with self.subTest(value=value):
                 self.assertIn(value, self.added)
+
+    def test_patch_neutralizes_remaining_validator_service_endpoints(self):
+        for value in (
+            'pref("extensions.geckoProfiler.acceptedExtensionIds", "");',
+            'pref("mail.cloud_files.learn_more_url", "");',
+            'pref("mail.ignore_thread.learn_more_url", "");',
+            'pref("mailnews.auto_config_url", "");',
+            'pref("mailnews.auto_config.addons_url", "");',
+        ):
+            with self.subTest(value=value):
+                self.assertIn(value, self.added)
+        self.assertNotIn('pref("extensions.webextensions.restrictedDomains", "");', self.added)
+        self.assertNotIn("extensions.webextensions.restrictedDomains", changed_pref_names(self.patch))
 
     def test_patch_does_not_modify_account_setup_autoconfig_or_oauth_prefs(self):
         changed = changed_pref_names(self.patch)
