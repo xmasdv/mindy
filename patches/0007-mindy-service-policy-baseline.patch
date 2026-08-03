@@ -277,3 +277,237 @@ diff --git a/comm/mailnews/mailnews.js b/comm/mailnews/mailnews.js
  // This may happen via insecure means (HTTP) susceptible to eavesdropping
  // and MitM (see mailnews.auto_config.fetchFromISP.sslOnly below).
  pref("mailnews.auto_config.fetchFromISP.enabled", true);
+diff --git a/toolkit/content/aboutTelemetry.js b/toolkit/content/aboutTelemetry.js
+--- a/toolkit/content/aboutTelemetry.js
++++ b/toolkit/content/aboutTelemetry.js
+@@ -37,8 +37,7 @@
+ const PREF_TELEMETRY_ENABLED = "toolkit.telemetry.enabled";
+ const PREF_DEBUG_SLOW_SQL = "toolkit.telemetry.debugSlowSql";
+ const PREF_SYMBOL_SERVER_URI = "profiler.symbolicationUrl";
+-const DEFAULT_SYMBOL_SERVER_URI =
+-  "https://symbolication.services.mozilla.com/symbolicate/v4";
++const DEFAULT_SYMBOL_SERVER_URI = "";
+ const PREF_FHR_UPLOAD_ENABLED = "datareporting.healthreport.uploadEnabled";
+ 
+ // ms idle before applying the filter (allow uninterrupted typing)
+diff --git a/comm/mail/base/content/aboutDialog.xhtml b/comm/mail/base/content/aboutDialog.xhtml
+--- a/comm/mail/base/content/aboutDialog.xhtml
++++ b/comm/mail/base/content/aboutDialog.xhtml
+@@ -162,9 +162,9 @@
+             <a class="text-link tab-link" href="about:credits" data-l10n-name="community-credits-link"></a>
+           </div>
+           <div class="text-blurb" id="contributeDesc" data-l10n-id="about-donation">
+-            <a class="text-link browser-link" href="https://www.thunderbird.net/donate/?utm_source=thunderbird-client&amp;utm_medium=referral&amp;utm_content=about-dialog"
++            <a class="text-link browser-link" href=""
+                data-l10n-name="helpus-donate-link"></a>
+-            <a class="text-link browser-link" href="https://www.thunderbird.net/participate/"
++            <a class="text-link browser-link" href=""
+                data-l10n-name="helpus-get-involved-link"></a>
+           </div>
+         </xul:vbox>
+@@ -174,7 +174,7 @@
+       <xul:hbox pack="center">
+         <a class="text-link bottom-link tab-link" href="about:license" data-l10n-id="bottom-links-license"></a>
+         <a class="text-link bottom-link tab-link" href="about:rights" data-l10n-id="bottom-links-rights"></a>
+-        <a class="text-link bottom-link browser-link" href="https://www.mozilla.org/privacy/thunderbird/"
++        <a class="text-link bottom-link browser-link" href=""
+            data-l10n-id="bottom-links-privacy"></a>
+       </xul:hbox>
+       <span id="trademark" data-l10n-id="trademarkInfo"></span>
+diff --git a/comm/mail/base/content/aboutRights.xhtml b/comm/mail/base/content/aboutRights.xhtml
+--- a/comm/mail/base/content/aboutRights.xhtml
++++ b/comm/mail/base/content/aboutRights.xhtml
+@@ -56,7 +56,7 @@
+         <li data-l10n-id="rights-intro-point-3"></li>
+         <li data-l10n-id="rights-intro-point-4">
+           <a
+-            href="https://www.thunderbird.net/privacy/"
++            href=""
+             data-l10n-name="mozilla-privacy-policy-link"
+           ></a>
+         </li>
+diff --git a/comm/mail/base/content/buildconfig.html b/comm/mail/base/content/buildconfig.html
+--- a/comm/mail/base/content/buildconfig.html
++++ b/comm/mail/base/content/buildconfig.html
+@@ -50,7 +50,7 @@
+ 
+       <p>
+         The latest information on building @MOZ_APP_DISPLAYNAME@ can be found at
+-        <a href="@THUNDERBIRD_DEVELOPER_WWW@">@THUNDERBIRD_DEVELOPER_WWW@</a>.
++        <a href=""></a>.
+       </p>
+ 
+       <h2>Build platform</h2>
+diff --git a/comm/mail/base/content/overrides/app-license.html b/comm/mail/base/content/overrides/app-license.html
+--- a/comm/mail/base/content/overrides/app-license.html
++++ b/comm/mail/base/content/overrides/app-license.html
+@@ -4,6 +4,6 @@
+ 
+ <p>
+   <b>Binaries</b> of this product have been made available to you by the
+-  <a href="https://www.thunderbird.net/">Thunderbird Project</a> under the
++  <a href="">Thunderbird Project</a> under the
+   Mozilla Public License. <a href="about:rights">Know your rights</a>.
+ </p>
+diff --git a/comm/mail/base/content/messenger.xhtml b/comm/mail/base/content/messenger.xhtml
+--- a/comm/mail/base/content/messenger.xhtml
++++ b/comm/mail/base/content/messenger.xhtml
+@@ -36,7 +36,7 @@
+ <head>
+   <meta
+     http-equiv="Content-Security-Policy"
+-    content="default-src chrome:; script-src chrome: resource: 'unsafe-inline' ; style-src chrome: 'unsafe-inline'; img-src chrome: data: moz-icon: https://addons.thunderbird.net; connect-src *"
++    content="default-src chrome:; script-src chrome: resource: 'unsafe-inline' ; style-src chrome: 'unsafe-inline'; img-src chrome: data: moz-icon:; connect-src *"
+   />
+   <link rel="stylesheet" href="chrome://messenger/skin/mailWindow1.css" />
+   <link rel="stylesheet" href="chrome://messenger/skin/tagColors.css" />
+diff --git a/comm/mailnews/base/content/msgAccountCentral.xhtml b/comm/mailnews/base/content/msgAccountCentral.xhtml
+--- a/comm/mailnews/base/content/msgAccountCentral.xhtml
++++ b/comm/mailnews/base/content/msgAccountCentral.xhtml
+@@ -255,7 +255,7 @@
+             data-l10n-id="about-paragraph-consider-donation"
+           >
+             <a
+-              href="https://www.thunderbird.net/donate/?utm_source=account_hub_tb_release&amp;utm_medium=referral&amp;utm_content=paragraph_text"
++              href=""
+               class="donation-link"
+               data-l10n-name="donation-link"
+               onclick="openLink(event);"
+@@ -272,7 +272,7 @@
+         <aside class="row-container">
+           <a
+             id="supportLink"
+-            href="https://support.mozilla.org/products/thunderbird"
++            href=""
+             class="resource-link"
+             data-l10n-id="support-link"
+             onclick="openLink(event);"
+@@ -281,7 +281,7 @@
+           ></a>
+           <a
+             id="involvedLink"
+-            href="https://www.thunderbird.net/participate/"
++            href=""
+             class="resource-link"
+             data-l10n-id="involved-link"
+             onclick="openLink(event);"
+@@ -290,7 +290,7 @@
+           ></a>
+           <a
+             id="developerLink"
+-            href="https://developer.thunderbird.net/"
++            href=""
+             class="resource-link"
+             data-l10n-id="developer-link"
+             onclick="openLink(event);"
+diff --git a/comm/mail/components/preferences/compose.inc.xhtml b/comm/mail/components/preferences/compose.inc.xhtml
+--- a/comm/mail/components/preferences/compose.inc.xhtml
++++ b/comm/mail/components/preferences/compose.inc.xhtml
+@@ -335,7 +335,7 @@
+                     oncommand="gCloudFile.removeCloudFileAccount();"/>
+             <label is="text-link"
+                    id="moreProvidersLink"
+-                   href="https://addons.thunderbird.net/thunderbird/tag/filelink"
++                   href=""
+                    data-l10n-id="find-cloud-providers"/>
+           </vbox>
+           <separator class="thin" orient="vertical"/>
+diff --git a/comm/mail/components/preferences/qrExport.inc.xhtml b/comm/mail/components/preferences/qrExport.inc.xhtml
+--- a/comm/mail/components/preferences/qrExport.inc.xhtml
++++ b/comm/mail/components/preferences/qrExport.inc.xhtml
+@@ -50,7 +50,7 @@
+           >
+             <a
+               data-l10n-name="account-support-link"
+-              href="https://support.thunderbird.net/kb/thunderbird-android-import"
++              href=""
+             ></a>
+           </p>
+         </section>
+diff --git a/comm/mail/components/preferences/privacy.inc.xhtml b/comm/mail/components/preferences/privacy.inc.xhtml
+--- a/comm/mail/components/preferences/privacy.inc.xhtml
++++ b/comm/mail/components/preferences/privacy.inc.xhtml
+@@ -46,7 +46,7 @@
+       </hbox>
+       <hbox>
+         <label is="text-link" id="acceptRemoteContentInfo"
+-               href="https://support.mozilla.org/kb/remote-content-in-messages"
++               href=""
+                data-l10n-id="remote-content-info"/>
+       </hbox>
+     </html:fieldset>
+diff --git a/comm/mail/base/content/utilityOverlay.js b/comm/mail/base/content/utilityOverlay.js
+--- a/comm/mail/base/content/utilityOverlay.js
++++ b/comm/mail/base/content/utilityOverlay.js
+@@ -162,27 +162,27 @@
+ function openLinkText(event, what) {
+   switch (what) {
+     case "getInvolvedURL":
+-      openUILink("https://www.thunderbird.net/participate/", event);
++      openUILink("", event);
+       break;
+     case "keyboardShortcutsURL":
+-      openUILink("https://support.mozilla.org/kb/keyboard-shortcuts/", event);
++      openUILink("", event);
+       break;
+     case "donateURL":
+       openUILink(
+-        "https://www.thunderbird.net/donate/?utm_source=thunderbird-client&utm_medium=referral&utm_content=help-menu",
++        "",
+         event
+       );
+       break;
+     case "feedbackURL":
+-      openUILink("https://connect.mozilla.org/", event);
++      openUILink("", event);
+       break;
+     case "releaseSupportURL":
+       if (AppConstants.NIGHTLY_BUILD) {
+-        openUILink("https://support.mozilla.org/kb/thunderbird-daily", event);
++        openUILink("", event);
+         break;
+       }
+ 
+-      openUILink("https://support.mozilla.org/kb/thunderbird-beta", event);
++      openUILink("", event);
+       break;
+   }
+ }
+diff --git a/devtools/server/actors/inspector/event-collector.js b/devtools/server/actors/inspector/event-collector.js
+--- a/devtools/server/actors/inspector/event-collector.js
++++ b/devtools/server/actors/inspector/event-collector.js
+@@ -910,7 +910,7 @@
+    *           {
+    *             type: "click",
+    *             handler: function() { doSomething() },
+-   *             origin: "http://www.mozilla.com",
++   *             origin: "",
+    *             tags: tags,
+    *             capturing: true,
+    *             hide: {
+diff --git a/devtools/server/actors/utils/inactive-property-helper.js b/devtools/server/actors/utils/inactive-property-helper.js
+--- a/devtools/server/actors/utils/inactive-property-helper.js
++++ b/devtools/server/actors/utils/inactive-property-helper.js
+@@ -445,7 +445,7 @@
+       // impossible for the JS code to determine whether the type of box would support
+       // impossible for the JS code to determine whether the type of box would support
+       // text-overflow. So, rather than risking to show invalid warnings, we decided to
+       // only warn when 'overflow-inline: visible' was set. There is more information
+-      // about this in this discussion https://phabricator.services.mozilla.com/D62407 and
++      // about this in the related design discussion and
+       // on the bug https://bugzilla.mozilla.org/show_bug.cgi?id=1551578
+       {
+         invalidProperties: ["text-overflow"],
+diff --git a/devtools/client/shared/stylesheet-utils.js b/devtools/client/shared/stylesheet-utils.js
+--- a/devtools/client/shared/stylesheet-utils.js
++++ b/devtools/client/shared/stylesheet-utils.js
+@@ -38,7 +38,7 @@
+   //   global.css
+   //   global.css
+   //   *-theme.css (the file loaded here)
+   //   document-specific-sheet.css
+-  // See Bug 1582786 / https://phabricator.services.mozilla.com/D46530#inline-284756.
++  // See Bug 1582786 for context.
+ 
+   // If there is a global sheet then insert after it.
+   const globalSheet = doc.querySelector(
