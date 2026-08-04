@@ -19,6 +19,8 @@ APPROVED_TARGETS = (
     "comm/mail/base/content/buildconfig.html",
     "comm/mail/base/content/overrides/app-license.html",
     "comm/mail/base/content/messenger.xhtml",
+    "comm/mail/components/accountcreation/templates/accountHubFooterTemplate.inc.xhtml",
+    "comm/mail/components/accountcreation/templates/accountHubTemplate.inc.xhtml",
     "comm/mailnews/base/content/msgAccountCentral.xhtml",
     "comm/mail/components/preferences/compose.inc.xhtml",
     "comm/mail/components/preferences/qrExport.inc.xhtml",
@@ -116,7 +118,7 @@ class ServicePolicyTests(unittest.TestCase):
         ):
             with self.subTest(value=value):
                 self.assertIn(value, self.added)
-        self.assertGreaterEqual(self.added.count('href=""'), 12)
+        self.assertGreaterEqual(self.added.count('href=""'), 14)
         self.assertGreaterEqual(self.added.count('openUILink("", event);'), 5)
 
     def test_patch_does_not_modify_account_setup_autoconfig_or_oauth_prefs(self):
