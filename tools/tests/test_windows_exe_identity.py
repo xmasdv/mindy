@@ -18,7 +18,7 @@ SERIES = (
     ("0004-mindy-identity-namespace.patch", "98ff34214761441f557ebbe1247036d3f0da37f7ba7f9ecc8e5d213c4859f013"),
     ("0005-mindy-branding-package.patch", "d829b482041c149a1e30efbddc65d32c31ba9e79de6dd3b39a237ae6123cff3c"),
     ("0006-mindy-windows-exe-identity.patch", "940af9eae5ed67689284aa2cb486c1f38c784eba28670256ebe4d0330febfe08"),
-    ("0007-mindy-service-policy-baseline.patch", "6ac09adb75ca0f1b711770a5d4948550d157cd8ca1ac28decf0c4ac02db611ea"),
+    ("0007-mindy-service-policy-baseline.patch", "0e36fdcd23d1da124c37a0338002dd94fdda5f616a7e7e459ea0e86898641be4"),
 )
 TARGETS = ("comm/mail/app/module.ver", "comm/mail/app/thunderbird.exe.manifest")
 
